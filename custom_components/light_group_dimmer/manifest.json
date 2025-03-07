@@ -1,0 +1,10 @@
+{
+  "domain": "light_group_dimmer",
+  "name": "Light Group Dimmer",
+  "version": "1.0",
+  "documentation": "https://github.com/xHecktor/Light-Group-Dimmer",
+  "dependencies": ["light", "group", "hue"],
+  "codeowners": ["@xHecktor"],
+  "requirements": [],
+  "config_flow": true
+}
