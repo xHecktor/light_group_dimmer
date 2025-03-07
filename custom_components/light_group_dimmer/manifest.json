@@ -3,6 +3,7 @@
   "name": "Light Group Dimmer",
   "version": "1.0",
   "documentation": "https://github.com/xHecktor/Light-Group-Dimmer",
+  "issue_tracker": "https://github.com/xHecktor/Light-Group-Dimmer/issues",
   "dependencies": ["light", "group", "hue"],
   "codeowners": ["@xHecktor"],
   "requirements": [],
