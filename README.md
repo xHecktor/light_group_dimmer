@@ -1,6 +1,7 @@
-# Light Group Dimmer
+# Light Group Dimmer (Repo noch in arbeit)
 
 **Light Group Dimmer** ist eine benutzerdefinierte Integration für [Home Assistant](https://www.home-assistant.io/), mit der du mehrere Lampen zu Gruppen zusammenfassen und gemeinsam dimmen kannst. Die Integration ermöglicht es, globale Verzögerungswerte (Delay) sowie eine gewichtete, iterative Dimm-Logik zu nutzen – ideal, um gruppenweise Lichtsteuerung präzise zu regeln.
+Bitte beachtet, dass ich kein Programmierer bin und mir den code in meiner Freizeit erarbeitet habe
 
 ## Inhalt
 
