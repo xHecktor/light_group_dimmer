@@ -1,0 +1,5 @@
+{
+  "name": "Light Group Dimmer",
+  "type": "integration",
+  "domains": ["light_group_dimmer"]
+}
