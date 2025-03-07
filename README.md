@@ -1,7 +1,7 @@
 Light Group Dimmer
 Light Group Dimmer ist eine benutzerdefinierte Integration für Home Assistant, mit der du mehrere Lampen zu Gruppen zusammenfassen und gemeinsam dimmen kannst. Die Integration ermöglicht es, globale Verzögerungswerte (Delay) sowie eine gewichtete, iterative Dimm-Logik zu nutzen – ideal, um gruppenweise Lichtsteuerung präzise zu regeln.
 
-Inhalt
+Inhalt:
 Features
 Installation
 Konfiguration
@@ -11,12 +11,14 @@ Verwendung
 Bekannte Probleme und Verbesserungen
 Beitrag leisten
 Lizenz
-Features
-Gruppensteuerung: Fasse mehrere Lichtentitäten zu einer Gruppe zusammen und steuere sie gemeinsam.
-Globaler Delay: Lege einen globalen Verzögerungswert (Delay) fest, der für alle gruppenweiten Dimm-Operationen gilt.
-Weighted Dimming: Nutzt eine iterative, gewichtete Berechnungslogik, um Helligkeitsänderungen möglichst gleichmäßig zu verteilen.
-Unterstützung für YAML und UI: Du kannst Gruppen und Delay entweder über die configuration.yaml oder über den integrierten Config Flow in Home Assistant konfigurieren.
-Automatischer Master-Eintrag: Global Delay Settings (Master) werden automatisch erstellt, falls noch keiner existiert – dieser Eintrag ist dann schreibgeschützt, um Dopplungen zu vermeiden.
+Features:
+  - Gruppensteuerung: Fasse mehrere Lichtentitäten zu einer Gruppe zusammen und steuere sie gemeinsam.
+  - Globaler Delay: Lege einen globalen Verzögerungswert (Delay) fest, der für alle gruppenweiten Dimm-Operationen gilt.
+  - Weighted Dimming: Nutzt eine iterative, gewichtete Berechnungslogik, um Helligkeitsänderungen möglichst gleichmäßig zu verteilen.
+  - Unterstützung für YAML und UI: Du kannst Gruppen und Delay entweder über die configuration.yaml oder über den integrierten Config Flow in Home Assistant konfigurieren.
+  - Automatischer Master-Eintrag: Global Delay Settings (Master) werden automatisch erstellt, falls noch keiner existiert – dieser Eintrag ist dann schreibgeschützt, um Dopplungen zu vermeiden.
+
+
 Installation
 Voraussetzungen:
 Stelle sicher, dass du Home Assistant in einer Version ≥ 2025.2 (oder kompatibel mit Custom Components) installiert hast.
@@ -26,7 +28,7 @@ Lade den Quellcode von GitHub herunter oder klone das Repository:
 
 bash
 Kopieren
-git clone https://github.com/dein-username/light_group_dimmer.git
+git clone https://github.com/xHecktor/light-group-dimmer
 Installation:
 Kopiere den Inhalt des Repositorys in das Verzeichnis custom_components/light_group_dimmer in deinem Home Assistant-Konfigurationsverzeichnis.
 
