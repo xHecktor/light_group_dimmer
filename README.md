@@ -29,10 +29,9 @@ Bitte beachtet, dass ich kein Programmierer bin und mir den code in meiner Freiz
    Stelle sicher, dass du Home Assistant in einer Version ≥ 2025.2 (oder kompatibel mit Custom Components) installiert hast.
 
 2. **Download:**  
-   Lade den Quellcode von [GitHub](https://github.com/xHecktor/light_group_dimmer) herunter oder klone das Repository:
+   Lade den Quellcode von [GitHub](https://github.com/xHecktor/Light-Group-Dimmer) herunter oder klone das Repository:
    ```bash
    git clone https://github.com/dein-username/light_group_dimmer.git
-Stelle sicher, dass du Home Assistant in einer Version ≥ 2025.2 (oder kompatibel mit Custom Components) installiert hast.
 
 3. **Installation:**
 Kopiere den Inhalt des Repositorys in das Verzeichnis custom_components/light_group_dimmer in deinem Home Assistant-Konfigurationsverzeichnis.
