@@ -43,6 +43,28 @@ Kopiere den Inhalt des Repositorys in das Verzeichnis custom_components/light_gr
 5. **Neustart:**
 Starte Home Assistant neu, damit die Integration erkannt und initialisiert wird.
 
+
+## Installation
+
+1. Stell sicher das [HACS](https://hacs.xyz) installiert ist.
+2. Füge in HACS die Benutzerdefinierte Repositories: **xHecktor/Light-Group-Dimmer** Typ:**Integration** hinzu
+3. Füge die **light_group_dimmer** Integration in **Geräte & Dienste**  in den Einstellungen zu Home Assistant hinzu:
+
+   [![](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start?domain=light_group_dimmer)
+
+   
+
+Wenn du es manuell installieren möchtest:
+
+2. Lade den Quellcode von [GitHub](https://github.com/xHecktor/Light-Group-Dimmer/tree/main/custom_components/light_group_dimmer) herunter
+3. Kopiere die Dateien des Repositorys in das Verzeichnis custom_components/light_group_dimmer in deinem Home Assistant-Konfigurationsverzeichnis.
+
+
+
+
+
+
+
 ## Konfiguration
 ### YAML-Konfiguration
 Du kannst den Delay-Wert und Gruppen auch über YAML konfigurieren. Füge dazu beispielsweise folgenden Abschnitt in deine configuration.yaml ein:
