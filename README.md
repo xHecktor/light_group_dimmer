@@ -59,7 +59,7 @@ Starte Home Assistant neu, damit die Integration erkannt und initialisiert wird.
 
 
 
-[![](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=xHecktor&repository=Light-Group-Dimmer)
+  [![](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=xHecktor&repository=Light-Group-Dimmer)
 
    [![](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start?domain=light_group_dimmer)
 
