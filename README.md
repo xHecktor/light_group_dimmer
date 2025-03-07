@@ -57,6 +57,10 @@ Starte Home Assistant neu, damit die Integration erkannt und initialisiert wird.
 2. Füge in HACS die Benutzerdefinierte Repositories: **xHecktor/Light-Group-Dimmer** Typ:**Integration** hinzu
 3. Füge die **light_group_dimmer** Integration in **Geräte & Dienste**  in den Einstellungen zu Home Assistant hinzu:
 
+
+
+[![](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=xHecktor&repository=Light-Group-Dimmer)
+
    [![](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start?domain=light_group_dimmer)
 
    
