@@ -1,6 +1,12 @@
-# Light Group Dimmer (Repo noch in arbeit)
+# Light Group Dimmer
 
-**Light Group Dimmer** ist eine benutzerdefinierte Integration für [Home Assistant](https://www.home-assistant.io/), mit der du mehrere Lampen zu Gruppen zusammenfassen und gemeinsam dimmen kannst. Die Integration ermöglicht es, globale Verzögerungswerte (Delay) sowie eine gewichtete, iterative Dimm-Logik zu nutzen – ideal, um gruppenweise Lichtsteuerung präzise zu regeln.
+**Light Group Dimmer** ist eine benutzerdefinierte Integration für [Home Assistant](https://www.home-assistant.io/), mit der du mehrere Lampen zu Gruppen zusammenfassen und gemeinsam dimmen kannst. 
+
+Diese Integration orientiert sich am Dimmverhalten von Hue und berücksichtigt, dass die Ausgangshelligkeit einzelner Lampen innerhalb einer Gruppe variieren kann. Beim Dimmen wird die Helligkeitsanpassung nicht gleichmäßig verteilt – Lampen, die bereits sehr hell sind, erhalten proportionell weniger zusätzliche Helligkeit, während dunklere Lampen stärker angehoben werden. So wird eine ausgewogene und harmonische Lichtbalance in der gesamten Gruppe erreicht.
+
+In der Hue App kann man durch Drücken und Halten des Schiebereglers experimentell die gewünschte Helligkeit einstellen. Da Home Assistant dieses "Drücken und Halten" des Sliders nicht unterstützt, wurde ein Delay implementiert. Während dieser Verzögerungszeit wird die ursprüngliche Helligkeit in dem Cache gespeichert und als Grundlage für die anschließende gewichtete und interavtive Berechnung der Helligkeit der einzelnen Lampen herangezogen.
+
+
 Bitte beachtet, dass ich kein Programmierer bin und mir den code in meiner Freizeit erarbeitet habe
 
 ## Inhalt
@@ -21,7 +27,7 @@ Bitte beachtet, dass ich kein Programmierer bin und mir den code in meiner Freiz
 - **Globaler Delay:** Lege einen globalen Verzögerungswert (Delay) fest, der für alle gruppenweiten Dimm-Operationen gilt.
 - **Weighted Dimming:** Nutzt eine iterative, gewichtete Berechnungslogik, um Helligkeitsänderungen möglichst gleichmäßig zu verteilen.
 - **Unterstützung für YAML und UI:** Du kannst Gruppen und Delay entweder über die `configuration.yaml` oder über den integrierten Config Flow in Home Assistant konfigurieren.
-- **Automatischer Master-Eintrag:** Global Delay Settings werden automatisch erstellt, falls noch keiner vorhanden ist. Dieser Eintrag ist schreibgeschützt, um Dopplungen zu vermeiden.
+- **Einschaltverhalten:** Es werden nur Lampen beim Dimmen berücksichtigt, die bereits eingeschaltet sind
 
 ## Installation
 
@@ -29,14 +35,12 @@ Bitte beachtet, dass ich kein Programmierer bin und mir den code in meiner Freiz
    Stelle sicher, dass du Home Assistant in einer Version ≥ 2025.2 (oder kompatibel mit Custom Components) installiert hast.
 
 2. **Download:**  
-   Lade den Quellcode von [GitHub](https://github.com/xHecktor/Light-Group-Dimmer) herunter oder klone das Repository:
-   ```bash
-   git clone https://github.com/dein-username/light_group_dimmer.git
-
-3. **Installation:**
+   Lade den Quellcode von [GitHub](https://github.com/xHecktor/Light-Group-Dimmer) herunter
+   
+4. **Installation:**
 Kopiere den Inhalt des Repositorys in das Verzeichnis custom_components/light_group_dimmer in deinem Home Assistant-Konfigurationsverzeichnis.
 
-4. **Neustart:**
+5. **Neustart:**
 Starte Home Assistant neu, damit die Integration erkannt und initialisiert wird.
 
 ## Konfiguration
@@ -58,24 +62,24 @@ light_group_dimmer:
         - light.schlafzimmer_decke_2
 ```
 
-Wird YAML konfiguriert, übernimmt die Integration den Delay-Wert aus der YAML-Konfiguration und aktualisiert automatisch den Master-Eintrag. YAML-basierte Gruppen sind dann nicht über den UI-OptionsFlow änderbar.
+Wird YAML konfiguriert, übernimmt die Integration den Delay-Wert aus der YAML-Konfiguration und aktualisiert automatisch den Master-Eintrag. YAML-basierte Gruppen sind dann nicht über den UI-OptionsFlow änderbar und es ist anschließend ein Neustart von HA notwendig.
 
 ### UI-Konfiguration (Config Flow)
 Falls du lieber die Benutzeroberfläche nutzt, kannst du Gruppen über den Config Flow anlegen und bearbeiten. Beachte dabei:
 
-Beim ersten Start wird automatisch ein Master-Eintrag "Global Delay Settings" erstellt, falls noch keiner vorhanden ist. Dieser Eintrag wird als Master (globaler Delay) geführt und ist schreibgeschützt, wenn YAML aktiv ist.
-Neue Gruppen (Typ "group") können über den Config Flow erstellt und über die Options im UI geändert werden. Änderungen werden in entry.options gespeichert und beim nächsten Reload übernommen.
-Die Auswahl zwischen „group“ und „master“ im Config Flow ist optional – du kannst den Master-Eintrag auch vollständig automatisch erzeugen, sodass Nutzer nur noch Gruppen erstellen und anpassen können.
+- Beim ersten Start wird automatisch ein Master-Eintrag "Global Delay Settings" erstellt, falls noch keiner vorhanden ist. Dieser Eintrag wird als Master (globaler Delay) geführt und ist schreibgeschützt, wenn YAML aktiv ist.
+- Neue Gruppen (Typ "group") können über den Config Flow erstellt und über die Options im UI geändert werden. Änderungen werden in entry.options gespeichert und beim nächsten Reload übernommen.
+- Die master-Option dient nur als Backup, falls "Global Delay Settings" Eintrag gelöscht oder nicht erstellt wurde. Der "Global Delay Settings" darf somit nur einmal vorliegen). 
+- Falls Lichtgruppen über yaml erstellt wurden, werden die Entities in dem Eintrag "Imported from YAML" oder evtl. in  "Global Delay Settings" zusammengefasst. Änderungen der yaml Einträge werden nur über ein Neustart von HA wirksam
+
 
 ## Verwendung
 **Steuerung über Home Assistant:**
 Sobald die Integration eingerichtet ist, erscheinen deine Gruppen als Lichtentitäten in Home Assistant. Du kannst sie über die Standard-Lichtsteuerung (Dashboard, Automatisierungen, Sprachassistenten) steuern.
 
 **Dimmen:**
-Die integrierte gewichtete Dimmlogik sorgt dafür, dass sich alle Lampen in der Gruppe gleichmäßig dimmen – unter Berücksichtigung des globalen Delay-Werts. Bei schnellen Änderungen (z. B. über einen Schieberegler) wird ein Debounce-Effekt erzielt, der die Änderungen stabilisiert.
+Die integrierte gewichtete Dimmlogik sorgt dafür, dass sich alle Lampen in der Gruppe gleichmäßig dimmen – unter Berücksichtigung des globalen Delay-Werts. Der Delay-Timer wird jedesmal zurück gesetzt, wenn eine erneute Ändeurng der Helligkeit erfolgt und der alte Timer noch nicht abgelaufen ist
 
-**Automatische Updates:**
-Die Integration nutzt asynchrone Updates und Cache-Logik, um den Status der einzelnen Lampen zu aggregieren. Dadurch werden Änderungen an einzelnen Lampen (z. B. über eine separate Lichtsteuerung) automatisch in der Gruppenentität aktualisiert.
 
 ## Bekannte Probleme und Verbesserungen
 **Delay-Anpassung:**
