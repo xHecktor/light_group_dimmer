@@ -1,5 +1,12 @@
 # Light Group Dimmer
 
+
+<p align="center">
+  <a href="https://github.com/xHecktor/Light-Group-Dimmer/">
+    <img src="https://github.com/xHecktor/Light-Group-Dimmer/blob/main/images/logo.png" alt="Logo" height="200">
+  </a>
+</p>
+
 **Light Group Dimmer** ist eine benutzerdefinierte Integration für [Home Assistant](https://www.home-assistant.io/), mit der du mehrere Lampen zu Gruppen zusammenfassen und gemeinsam dimmen kannst. 
 
 Diese Integration orientiert sich am Dimmverhalten von Hue und berücksichtigt, dass die Ausgangshelligkeit einzelner Lampen innerhalb einer Gruppe variieren kann. Beim Dimmen wird die Helligkeitsanpassung nicht gleichmäßig verteilt – Lampen, die bereits sehr hell sind, erhalten proportionell weniger zusätzliche Helligkeit, während dunklere Lampen stärker angehoben werden. So wird eine ausgewogene und harmonische Lichtbalance in der gesamten Gruppe erreicht.
