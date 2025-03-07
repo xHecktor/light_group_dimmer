@@ -67,7 +67,7 @@ Beim ersten Start wird automatisch ein Master-Eintrag "Global Delay Settings" er
 Neue Gruppen (Typ "group") können über den Config Flow erstellt und über die Options im UI geändert werden. Änderungen werden in entry.options gespeichert und beim nächsten Reload übernommen.
 Die Auswahl zwischen „group“ und „master“ im Config Flow ist optional – du kannst den Master-Eintrag auch vollständig automatisch erzeugen, sodass Nutzer nur noch Gruppen erstellen und anpassen können.
 
-### Verwendung
+## Verwendung
 **Steuerung über Home Assistant:**
 Sobald die Integration eingerichtet ist, erscheinen deine Gruppen als Lichtentitäten in Home Assistant. Du kannst sie über die Standard-Lichtsteuerung (Dashboard, Automatisierungen, Sprachassistenten) steuern.
 
@@ -77,8 +77,8 @@ Die integrierte gewichtete Dimmlogik sorgt dafür, dass sich alle Lampen in der 
 **Automatische Updates:**
 Die Integration nutzt asynchrone Updates und Cache-Logik, um den Status der einzelnen Lampen zu aggregieren. Dadurch werden Änderungen an einzelnen Lampen (z. B. über eine separate Lichtsteuerung) automatisch in der Gruppenentität aktualisiert.
 
-**Bekannte Probleme und Verbesserungen**
-Delay-Anpassung:
+## Bekannte Probleme und Verbesserungen
+**Delay-Anpassung:**
 Es kann vorkommen, dass der Delay-Wert um 2–5 Sekunden zu hoch eingestellt werden muss, damit die Cache-Logik stabil arbeitet. Dies liegt an den asynchronen Updates, dem iterativen Dimm-Verfahren und Netzwerk-/Systemlatenzen.
 Verbesserungsvorschlag:
 Ein Debounce-Mechanismus oder dynamische Verzögerungsberechnung könnte hier helfen, die Logik weiter zu optimieren.
@@ -89,9 +89,9 @@ Durch die iterative Berechnung und das asynchrone Event-Handling können in manc
 **Farbmodi und Effekte:**
 Bei bestimmten Kombinationen von Farbmodi und Effekten kann es zu Warnungen kommen. Bitte melde solche Fälle, damit die Integration weiter verbessert werden kann.
 
-### Beitrag leisten
+## Beitrag leisten
 Beiträge zur Weiterentwicklung der Integration sind willkommen!
 Bitte reiche Pull Requests ein oder eröffne ein Issue, wenn du Fehler findest oder neue Features implementieren möchtest.
 
-### Lizenz
+## Lizenz
 Dieses Projekt steht unter der MIT-Lizenz.
