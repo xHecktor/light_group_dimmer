@@ -1,7 +1,7 @@
 {
   "domain": "light_group_dimmer",
   "name": "Light Group Dimmer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "documentation": "https://github.com/xHecktor/light_group_dimmer",
   "issue_tracker": "https://github.com/xHecktor/light_group_dimmer/issues",
   "dependencies": ["light", "group", "hue"],
