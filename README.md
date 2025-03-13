@@ -14,7 +14,7 @@ Diese Integration orientiert sich am Dimmverhalten von Hue und berücksichtigt, 
 In der Hue App kann man durch Drücken und Halten des Schiebereglers experimentell die gewünschte Helligkeit einstellen. Da Home Assistant dieses "Drücken und Halten" des Sliders nicht unterstützt, wurde ein Delay implementiert. Während dieser Verzögerungszeit wird die ursprüngliche Helligkeit in dem Cache gespeichert und als Grundlage für die anschließende gewichtete und interavtive Berechnung der Helligkeit der einzelnen Lampen herangezogen.
 
 
-Bitte beachtet, dass ich kein Programmierer bin und mir den code in meiner Freizeit erarbeitet habe
+Bitte beachtet, dass ich kein Programmierer bin und mir den code in meiner Freizeit erarbeitet habe. Ich habe die Integration bisher nur in Kombination mit einer Hue Bridge getestet. 
 
 ## Inhalt
 
@@ -35,6 +35,7 @@ Bitte beachtet, dass ich kein Programmierer bin und mir den code in meiner Freiz
 - **Weighted Dimming:** Nutzt eine iterative, gewichtete Berechnungslogik, um Helligkeitsänderungen möglichst gleichmäßig zu verteilen.
 - **Unterstützung für YAML und UI:** Du kannst Gruppen und Delay entweder über die `configuration.yaml` oder über den integrierten Config Flow in Home Assistant konfigurieren.
 - **Einschaltverhalten:** Es werden nur Lampen beim Dimmen berücksichtigt, die bereits eingeschaltet sind
+- **Helligkeitsspeicherung** Die Hue bridge speichert die letzten Einstellungen der Lampen. Beim reinen Einschalten einer Gruppe werden genau diese wieder aufgerufen. Möchte man alle Lampen mit der gleichen Helligkeit einschalten, dann muss man bei ausgeschalteter Gruppe direkt die Helligkeit über den Regler einstellen. 
 
 ## Installation
 
