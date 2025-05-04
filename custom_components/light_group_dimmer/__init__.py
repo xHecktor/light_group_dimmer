@@ -62,9 +62,7 @@ async def async_setup(hass: HomeAssistant, config: dict):
         _LOGGER.info("Kein Master-Eintrag vorhanden. Lege automatisch einen an.")
         master_delay = DEFAULT_DELAY
         data = {CONF_TYPE: "master", CONF_DELAY: master_delay}
-        # Falls es YAML-Daten gibt, integriere sie
-        if hass.data[DOMAIN]["yaml_config"]:
-            data["groups"] = hass.data[DOMAIN][CONF_GROUPS]
+
 
         # Starte den System-Flow zum Anlegen des Master-Eintrags
         hass.async_create_task(
@@ -85,8 +83,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """
     entry.async_on_unload(entry.add_update_listener(update_listener))
     entry_type = entry.data.get(CONF_TYPE)
-
+    
     if entry_type == "master":
+        
+        if entry.data.get("groups"):
+            clean_data = {k: v for k, v in entry.data.items() if k != "groups"}
+            hass.config_entries.async_update_entry(entry, data=clean_data)
+            _LOGGER.info("Alte Gruppen aus dem Master‑Eintrag gelöscht")        
+        
         # Master-Eintrag: Delay aus YAML oder OptionsFlow übernehmen
         if hass.data[DOMAIN].get("yaml_config"):
             yaml_delay = hass.data[DOMAIN][CONF_DELAY]
