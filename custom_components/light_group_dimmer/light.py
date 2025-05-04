@@ -711,7 +711,10 @@ class CustomLightGroup(LightEntity):
     
             # Farben/Effekte + neue Kelvin-Farbtemperatur verarbeiten (unabhängig vom Cache)
             color_service_data_list = self._build_color_service_data(
-                new_xy_color, new_hs_color, self._color_temp_kelvin, new_effect
+                new_xy_color,         # unverändert
+                new_hs_color,         # unverändert
+                new_kelvin,           # <-- nur das, was gerade hereingekommen ist
+                new_effect            # unverändert
             )
             service_data_list.extend(color_service_data_list)
     
