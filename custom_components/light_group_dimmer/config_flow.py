@@ -66,26 +66,33 @@ class LightGroupDimmerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             e for e in self.hass.config_entries.async_entries(DOMAIN)
             if e.data.get(CONF_TYPE) == "master"
         ]
-        if master_entries:
-            master_entry = master_entries[0]
-            _LOGGER.debug("Master-Eintrag gefunden: %s", master_entry.data)
-            # Vergleiche bisherige und neue Gruppen
-            if not groups_equal(master_entry.data.get("groups", []), groups):
-                _LOGGER.debug("YAML-Gruppen haben sich geändert – aktualisiere Master-Eintrag")
-                new_data = {**master_entry.data, "groups": groups}
-                self.hass.config_entries.async_update_entry(master_entry, data=new_data)
+        yaml_entries = [
+            e for e in self.hass.config_entries.async_entries(DOMAIN)
+            if e.data.get(CONF_TYPE) == "yaml"
+        ]
+        
+        if yaml_entries:
+            yaml_entry = yaml_entries[0]
+            if not groups_equal(yaml_entry.data.get("groups", []), groups):
+                new_data = {**yaml_entry.data, "groups": groups}
+                self.hass.config_entries.async_update_entry(yaml_entry, data=new_data)
                 self.hass.async_create_task(
-                    self.hass.config_entries.async_reload(master_entry.entry_id)
+                    self.hass.config_entries.async_reload(yaml_entry.entry_id)
                 )
+            
             else:
                 _LOGGER.debug("Keine Änderungen an den YAML-Gruppen festgestellt.")
             return self.async_abort(reason="import_complete")
-        else:
-            # Fallback: Erstelle YAML-Eintrag, falls kein Master existiert
-            return self.async_create_entry(
-                title="Imported from YAML",
-                data={"type": "yaml", "groups": groups}
-            )
+        
+        # Noch kein YAML‑Eintrag → neu anlegen
+        return self.async_create_entry(
+            title="Imported from YAML",
+            data={"type": "yaml", "groups": groups}
+        )
+
+
+
+
 
     async def async_step_user(self, user_input=None):
         """
