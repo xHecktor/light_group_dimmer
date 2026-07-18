@@ -1,5 +1,6 @@
 import logging
 import asyncio
+import time
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_HS_COLOR,
@@ -132,6 +133,12 @@ class CustomLightGroup(LightEntity):
         self._supported_features = LightEntityFeature.EFFECT
         self._update_scheduled = False
         self._update_pending = False
+        # Optimistische Gruppenhelligkeit: hält den angezeigten Wert während eines
+        # selbst ausgelösten Kommandos auf dem Zielwert, damit der Regler nicht durch
+        # die Zwischenmittelwerte der nacheinander meldenden Lampen springt.
+        self._optimistic_brightness = None
+        self._optimistic_until = 0.0
+        self._optimistic_task = None
         self._brightness_cache = {}  # {group_id: {"group_brightness", "lamp_brightnesses", "timer"}}
         _LOGGER.debug(f"Initialisiere Lichtgruppe: {self._name} mit Entitäten: {self._entities}")
 
@@ -154,6 +161,9 @@ class CustomLightGroup(LightEntity):
         # die Hue-Bridge) States bekommen, feuern die Listener und die Gruppe füllt sich.
         # Zusätzlich einmal nachziehen, wenn HA vollständig gestartet ist.
         self.async_on_remove(async_at_start(self.hass, self._async_on_ha_start))
+
+        # Beim Entfernen/Reload einen evtl. laufenden Reconcile-Task abbrechen.
+        self.async_on_remove(self._clear_optimistic_brightness)
 
     async def _async_on_ha_start(self, _hass):
         """Nach vollständigem HA-Start erneut aktualisieren (spät registrierte Lampen)."""
@@ -312,7 +322,14 @@ class CustomLightGroup(LightEntity):
             state.attributes.get(ATTR_BRIGHTNESS, 0)
             for state in states if state and state.state == "on" and ATTR_BRIGHTNESS in state.attributes and state.attributes.get(ATTR_BRIGHTNESS) is not None
         ]
-        self._brightness = round(sum(brightness_values) / len(brightness_values)) if brightness_values else 0
+        computed_brightness = round(sum(brightness_values) / len(brightness_values)) if brightness_values else 0
+        # Während des Settle-Fensters den kommandierten Zielwert halten, sonst den
+        # echten Ist-Mittelwert übernehmen (verhindert das Springen des Reglers).
+        if self._optimistic_brightness is not None and time.monotonic() < self._optimistic_until:
+            self._brightness = self._optimistic_brightness
+        else:
+            self._optimistic_brightness = None
+            self._brightness = computed_brightness
 
         # Farbtemperatur direkt in Kelvin (HA-Standard seit 2024.12; Hue liefert nur noch Kelvin)
         kelvin_values = [
@@ -449,9 +466,6 @@ class CustomLightGroup(LightEntity):
         Enthält die gewichtete Helligkeitsberechnung mit Cache.
         """
         self._is_on = True
-        # Optimistisch: die eigene Gruppen-Entity sofort aktualisieren, damit die
-        # UI reagiert. Echte Lampen-States kommen anschließend per Event zurück.
-        self.async_write_ha_state()
 
         new_brightness = kwargs.get(ATTR_BRIGHTNESS, None)
         new_xy_color = kwargs.get(ATTR_XY_COLOR, None)
@@ -460,6 +474,13 @@ class CustomLightGroup(LightEntity):
         if new_kelvin:
             self._color_temp_kelvin = new_kelvin
         new_effect = kwargs.get(ATTR_EFFECT, None)
+
+        # Optimistisch: die eigene Gruppen-Entity sofort aktualisieren, damit die UI
+        # reagiert. Bei einer Helligkeitsänderung den Zielwert pinnen (kein Springen
+        # des Reglers). Echte Lampen-States kommen anschließend per Event zurück.
+        if new_brightness is not None:
+            self._pin_optimistic_brightness(new_brightness)
+        self.async_write_ha_state()
 
         group_is_on = self.is_group_on()
 
@@ -580,11 +601,47 @@ class CustomLightGroup(LightEntity):
         if tasks:
             await asyncio.gather(*tasks)
 
+    # Settle-Fenster: etwas mehr als eine typische Hue-Transition plus Event-Latenz.
+    _OPTIMISTIC_SETTLE_SECONDS = 2.0
+
+    def _pin_optimistic_brightness(self, value):
+        """
+        Zeigt die kommandierte Gruppenhelligkeit sofort an und hält sie für ein kurzes
+        Settle-Fenster, damit der Regler nicht durch die Zwischenmittelwerte der
+        nacheinander meldenden Lampen springt. Betrifft nur die eigene Anzeige der
+        Gruppe – es werden keine fremden Lampen-States geschrieben.
+        """
+        self._optimistic_brightness = value
+        self._brightness = value
+        self._optimistic_until = time.monotonic() + self._OPTIMISTIC_SETTLE_SECONDS
+        if self._optimistic_task:
+            self._optimistic_task.cancel()
+        self._optimistic_task = self.hass.async_create_task(self._reconcile_brightness())
+
+    def _clear_optimistic_brightness(self):
+        """Beendet das Pinnen (z. B. beim Ausschalten)."""
+        self._optimistic_brightness = None
+        self._optimistic_until = 0.0
+        if self._optimistic_task:
+            self._optimistic_task.cancel()
+            self._optimistic_task = None
+
+    async def _reconcile_brightness(self):
+        """Übernimmt nach Ablauf des Settle-Fensters wieder den echten Ist-Mittelwert."""
+        try:
+            await asyncio.sleep(self._OPTIMISTIC_SETTLE_SECONDS + 0.1)
+            self._optimistic_brightness = None
+            self._optimistic_task = None
+            await self.async_update()
+        except asyncio.CancelledError:
+            pass
+
     async def async_turn_off(self, **kwargs):
         """Schalte die ganze Gruppe aus."""
         self._is_on = False
         # Optimistisch: Gruppe sofort als "aus" melden, damit der Helligkeitsbalken
         # nicht auf die Bestätigung der Lampen warten muss.
+        self._clear_optimistic_brightness()
         self.async_write_ha_state()
 
         tasks = []
