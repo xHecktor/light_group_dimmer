@@ -1,0 +1,54 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Light Group Dimmer",
+        "description": "Wähle aus, was du anlegen möchtest.",
+        "data": {
+          "type": "Typ (group oder master)"
+        }
+      },
+      "master": {
+        "title": "Globale Delay-Einstellungen",
+        "description": "Verzögerung (in Sekunden), die die Gruppe nach einer Helligkeitsänderung wartet, bevor die Ausgangswerte neu berechnet werden.",
+        "data": {
+          "delay": "Delay (Sekunden)"
+        }
+      },
+      "group": {
+        "title": "Lichtgruppe anlegen",
+        "data": {
+          "name": "Name",
+          "entities": "Lampen"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Es existiert bereits ein Master-Eintrag.",
+      "import_complete": "Die YAML-Konfiguration wurde importiert."
+    }
+  },
+  "options": {
+    "step": {
+      "master_options": {
+        "title": "Globale Delay-Einstellungen",
+        "description": "Verzögerung (in Sekunden) für alle gruppenweiten Dimm-Operationen.",
+        "data": {
+          "delay": "Delay (Sekunden)"
+        }
+      },
+      "group_options": {
+        "title": "Lichtgruppe bearbeiten",
+        "data": {
+          "name": "Name",
+          "entities": "Lampen"
+        }
+      }
+    },
+    "abort": {
+      "yaml_not_editable": "Diese Gruppe wurde über YAML konfiguriert und kann nicht im UI bearbeitet werden.",
+      "entry_not_found": "Der Konfigurationseintrag wurde nicht gefunden.",
+      "unknown_type": "Unbekannter Eintragstyp."
+    }
+  }
+}

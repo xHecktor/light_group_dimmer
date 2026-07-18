@@ -1,0 +1,54 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Light Group Dimmer",
+        "description": "Choose what you want to create.",
+        "data": {
+          "type": "Type (group or master)"
+        }
+      },
+      "master": {
+        "title": "Global delay settings",
+        "description": "Delay (in seconds) that the group waits after a brightness change before it recalculates the base values.",
+        "data": {
+          "delay": "Delay (seconds)"
+        }
+      },
+      "group": {
+        "title": "Create light group",
+        "data": {
+          "name": "Name",
+          "entities": "Lights"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "A master entry already exists.",
+      "import_complete": "The YAML configuration has been imported."
+    }
+  },
+  "options": {
+    "step": {
+      "master_options": {
+        "title": "Global delay settings",
+        "description": "Delay (in seconds) used for all group dimming operations.",
+        "data": {
+          "delay": "Delay (seconds)"
+        }
+      },
+      "group_options": {
+        "title": "Edit light group",
+        "data": {
+          "name": "Name",
+          "entities": "Lights"
+        }
+      }
+    },
+    "abort": {
+      "yaml_not_editable": "This group was configured via YAML and cannot be edited in the UI.",
+      "entry_not_found": "The configuration entry could not be found.",
+      "unknown_type": "Unknown entry type."
+    }
+  }
+}
