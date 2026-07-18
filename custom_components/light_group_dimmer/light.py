@@ -333,7 +333,15 @@ class CustomLightGroup(LightEntity):
         # Während des Settle-Fensters den kommandierten Zielwert halten, sonst den
         # echten Ist-Mittelwert übernehmen (verhindert das Springen des Reglers).
         if self._optimistic_brightness is not None and time.monotonic() < self._optimistic_until:
-            self._brightness = self._optimistic_brightness
+            # Früh-Löser: Sobald der echte Mittelwert nahe genug am Zielwert ist,
+            # das Pinning sofort beenden (kleine/schnelle Gruppen lösen dann nach
+            # ~0,5 s statt fix 2 s). Der Timeout in _reconcile_brightness bleibt als
+            # Obergrenze, falls eine Lampe gar nicht (mehr) meldet -> kein Einfrieren.
+            if abs(computed_brightness - self._optimistic_brightness) <= self._OPTIMISTIC_TOLERANCE:
+                self._optimistic_brightness = None
+                self._brightness = computed_brightness
+            else:
+                self._brightness = self._optimistic_brightness
         else:
             self._optimistic_brightness = None
             self._brightness = computed_brightness
@@ -609,7 +617,11 @@ class CustomLightGroup(LightEntity):
             await asyncio.gather(*tasks)
 
     # Settle-Fenster: etwas mehr als eine typische Hue-Transition plus Event-Latenz.
+    # Dient als harte Obergrenze; die Anzeige wird i. d. R. früher gelöst (siehe unten).
     _OPTIMISTIC_SETTLE_SECONDS = 2.0
+    # Toleranz für das Früh-Lösen: liegt der echte Mittelwert so nah (0..255) am
+    # Zielwert, gilt die Gruppe als "angekommen" (~2 % von 255).
+    _OPTIMISTIC_TOLERANCE = 5
 
     def _pin_optimistic_brightness(self, value):
         """
