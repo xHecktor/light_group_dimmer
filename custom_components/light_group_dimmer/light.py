@@ -117,7 +117,14 @@ class CustomLightGroup(LightEntity):
 
         self._name = name
         self._unique_id = unique_id
-        self._entities = entities
+        # Doppelte Einträge entfernen (reihenfolgetreu): sonst zählt eine mehrfach
+        # gelistete Lampe doppelt in den Mittelwert und bekommt doppelte Service-Calls.
+        self._entities = list(dict.fromkeys(entities))
+        if len(self._entities) != len(entities):
+            _LOGGER.debug(
+                "Doppelte Entitäten in Gruppe '%s' entfernt: %s -> %s",
+                name, entities, self._entities,
+            )
         self._special_case = True  # Flag für den Spezialfall (Farb-Transformation)
         self._brightness = 0
         self._hs_color = (0, 0)
@@ -660,11 +667,12 @@ class CustomLightGroup(LightEntity):
         """Wird getriggert, wenn sich eine einzelne Lampe ändert."""
         _LOGGER.debug(f"Lichtänderung erkannt: {event}")
 
-        # Debounce auf Ruhe: Solange die Mitglieds-Lampen noch Zustände melden
-        # (z. B. nach einem Slider-Zug), wird der Cache-Timer neu gestartet. Erst
-        # wenn wirklich keine Events mehr kommen, läuft der Delay ab.
-        if self.get_brightness_cache(self._name):
-            self.reset_brightness_cache_timer(self._name, log_reason="Lampen-Event")
+        # Bewusst KEIN Zurücksetzen des Cache-Timers hier: Der Baseline im Cache ist
+        # eingefroren (store_brightness_cache), die Lampen-Rückmeldungen nach einem
+        # Slider-Zug ändern ihn nicht. Ein Reset würde das Fenster nur um die Settle-
+        # Zeit der Lampen verlängern (und mit der Gruppengröße skalieren). Der Delay
+        # soll die Ruhezeit NACH dem letzten Slider-Befehl messen – die Resets dafür
+        # sitzen in store_brightness_cache und im async_turn_on-Befehlspfad.
 
         # Läuft bereits ein Update, Event nicht verwerfen, sondern nachholen.
         if self._update_scheduled:
