@@ -17,6 +17,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN, CONF_TYPE, CONF_NAME, CONF_ENTITIES, CONF_DELAY, DEFAULT_DELAY
+from .brightness import compute_target_brightnesses
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -692,69 +693,12 @@ class CustomLightGroup(LightEntity):
     # ----------------------------------------------------------
     def _compute_target_brightnesses(self, lamp_brightnesses, target_group_brightness):
         """
-        Berechnet für alle aktiven (dimmbaren) Lampen die neue Helligkeit, sodass der
-        Mittelwert der Gruppe genau target_group_brightness trifft.
-
-        Gewichtung wie bisher:
-          - beim Hochdimmen bekommen dunklere Lampen mehr Zuwachs (mehr "Headroom"),
-          - beim Runterdimmen geben hellere Lampen mehr ab.
-
-        Anders als die frühere iterative Variante wird der Zielwert in einem Schritt
-        exakt getroffen. Nur wenn Lampen an 0/255 anschlagen, wird der Restanteil auf
-        die verbleibenden Lampen umverteilt (höchstens so oft wie Lampen saturieren).
-        Steckdosen / On-Off-Geräte haben keine Helligkeit (Wert 0) und werden ignoriert.
+        Dünner Wrapper um die reine Rechenfunktion (siehe brightness.py) mit Logging.
+        Steckdosen / On-Off-Geräte (Helligkeit 0) werden dort ignoriert.
         """
-        active = {lp: float(v) for lp, v in lamp_brightnesses.items() if v and v > 0}
-        if not active:
-            _LOGGER.debug("[Cache] Keine aktiven Lampen => leeres Ergebnis.")
-            return {}
-
-        n = len(active)
-        target_sum = target_group_brightness * n
-        result = dict(active)
-        locked = set()
-
-        # Maximal n+1 Durchgänge – jeder Durchgang fixiert mindestens eine saturierte Lampe.
-        for _ in range(n + 1):
-            free = [lp for lp in result if lp not in locked]
-            if not free:
-                break
-
-            current_sum = sum(result.values())
-            delta_total = target_sum - current_sum
-            if abs(delta_total) < 0.5:
-                break
-
-            dimming_up = delta_total > 0
-            weights = {
-                lp: (1.0 - result[lp] / 255.0) if dimming_up else (result[lp] / 255.0)
-                for lp in free
-            }
-            total_weight = sum(weights.values())
-            if total_weight <= 1e-9:
-                break
-
-            scaling = delta_total / total_weight
-            newly_locked = False
-            for lp in free:
-                new_val = result[lp] + weights[lp] * scaling
-                if new_val <= 0:
-                    new_val = 0.0
-                    locked.add(lp)
-                    newly_locked = True
-                elif new_val >= 255:
-                    new_val = 255.0
-                    locked.add(lp)
-                    newly_locked = True
-                result[lp] = new_val
-
-            # Keine neue Saturierung => Ziel ist (bis auf Rundung) erreicht.
-            if not newly_locked:
-                break
-
-        final_result = {lp: int(round(v)) for lp, v in result.items()}
-        _LOGGER.debug(f"[Cache] Ziel-Helligkeiten (target={target_group_brightness}): {final_result}")
-        return final_result
+        result = compute_target_brightnesses(lamp_brightnesses, target_group_brightness)
+        _LOGGER.debug(f"[Cache] Ziel-Helligkeiten (target={target_group_brightness}): {result}")
+        return result
 
     # ----------------------------------------------------------
     #   Sonstige Helferfunktionen (Farben/Effekte etc.)
