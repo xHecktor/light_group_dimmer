@@ -7,6 +7,7 @@ from homeassistant.components.light import (
     ATTR_COLOR_TEMP_KELVIN,
     ATTR_EFFECT,
     ATTR_SUPPORTED_COLOR_MODES,
+    ATTR_TRANSITION,
     ATTR_XY_COLOR,
     LightEntity,
     ColorMode,
@@ -137,7 +138,7 @@ class CustomLightGroup(LightEntity):
         self.hass = hass
         self._icon = "mdi:lightbulb-group"
         self._supported_color_modes = set()
-        self._supported_features = LightEntityFeature.EFFECT
+        self._supported_features = LightEntityFeature.EFFECT | LightEntityFeature.TRANSITION
         self._update_scheduled = False
         self._update_pending = False
         # Optimistische Gruppenhelligkeit: hält den angezeigten Wert während eines
@@ -346,6 +347,19 @@ class CustomLightGroup(LightEntity):
             self._optimistic_brightness = None
             self._brightness = computed_brightness
 
+        # Kelvin-Grenzen aus den Mitgliedern ableiten (Vereinigung = weitester Bereich,
+        # wie die HA-Core-Lichtgruppe). Lampen mit engerem Bereich begrenzen selbst.
+        member_min_kelvins = [
+            state.attributes.get("min_color_temp_kelvin")
+            for state in states if state.attributes.get("min_color_temp_kelvin")
+        ]
+        member_max_kelvins = [
+            state.attributes.get("max_color_temp_kelvin")
+            for state in states if state.attributes.get("max_color_temp_kelvin")
+        ]
+        self._attr_min_color_temp_kelvin = min(member_min_kelvins) if member_min_kelvins else 2000
+        self._attr_max_color_temp_kelvin = max(member_max_kelvins) if member_max_kelvins else 6500
+
         # Farbtemperatur direkt in Kelvin (HA-Standard seit 2024.12; Hue liefert nur noch Kelvin)
         kelvin_values = [
             state.attributes.get(ATTR_COLOR_TEMP_KELVIN)
@@ -489,6 +503,8 @@ class CustomLightGroup(LightEntity):
         if new_kelvin:
             self._color_temp_kelvin = new_kelvin
         new_effect = kwargs.get(ATTR_EFFECT, None)
+        # Übergangszeit (z. B. aus Szenen/Automationen) an die Lampen durchreichen.
+        new_transition = kwargs.get(ATTR_TRANSITION)
 
         # Optimistisch: die eigene Gruppen-Entity sofort aktualisieren, damit die UI
         # reagiert. Bei einer Helligkeitsänderung den Zielwert pinnen (kein Springen
@@ -534,7 +550,7 @@ class CustomLightGroup(LightEntity):
                     # Steckdose / On-Off-Gerät: keine Helligkeit mitschicken
                     service_data_list.append({"entity_id": entity_id})
 
-            await self._async_call_turn_on(service_data_list)
+            await self._async_call_turn_on(service_data_list, new_transition)
             await self.async_update()
             return
 
@@ -552,7 +568,7 @@ class CustomLightGroup(LightEntity):
             service_data_list.extend(
                 self._build_color_service_data(new_xy_color, new_hs_color, new_kelvin, new_effect)
             )
-            await self._async_call_turn_on(service_data_list)
+            await self._async_call_turn_on(service_data_list, new_transition)
             await self.async_update()
             return
 
@@ -587,7 +603,7 @@ class CustomLightGroup(LightEntity):
             service_data_list.extend(
                 self._build_color_service_data(new_xy_color, new_hs_color, new_kelvin, new_effect)
             )
-            await self._async_call_turn_on(service_data_list)
+            await self._async_call_turn_on(service_data_list, new_transition)
 
         else:
             # Kein new_brightness => Farben/Effekt oder nur Einschalten
@@ -603,12 +619,15 @@ class CustomLightGroup(LightEntity):
             if is_simple_turn_on and not service_data_list:
                 service_data_list = [{"entity_id": e} for e in self._entities]
 
-            await self._async_call_turn_on(service_data_list)
+            await self._async_call_turn_on(service_data_list, new_transition)
 
         await self.async_update()
 
-    async def _async_call_turn_on(self, service_data_list):
+    async def _async_call_turn_on(self, service_data_list, transition=None):
         """Ruft light.turn_on parallel für alle vorbereiteten Service-Daten auf."""
+        if transition is not None:
+            for data in service_data_list:
+                data[ATTR_TRANSITION] = transition
         tasks = [
             self.hass.services.async_call("light", "turn_on", data)
             for data in service_data_list
@@ -663,13 +682,17 @@ class CustomLightGroup(LightEntity):
         self._clear_optimistic_brightness()
         self.async_write_ha_state()
 
+        transition = kwargs.get(ATTR_TRANSITION)
         tasks = []
         for entity_id in self._entities:
             state = self.hass.states.get(entity_id)
             if not state or state.state in ("off", "unavailable", "unknown"):
                 _LOGGER.debug(f"{entity_id} ist bereits aus oder nicht verfügbar.")
                 continue
-            tasks.append(self.hass.services.async_call("light", "turn_off", {"entity_id": entity_id}))
+            service_data = {"entity_id": entity_id}
+            if transition is not None:
+                service_data[ATTR_TRANSITION] = transition
+            tasks.append(self.hass.services.async_call("light", "turn_off", service_data))
 
         if tasks:
             await asyncio.gather(*tasks)
