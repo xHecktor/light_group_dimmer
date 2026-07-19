@@ -7,14 +7,13 @@
   </a>
 </p>
 
-**Light Group Dimmer** ist eine benutzerdefinierte Integration für [Home Assistant](https://www.home-assistant.io/), mit der du mehrere Lampen zu Gruppen zusammenfassen und gemeinsam dimmen kannst. 
+**Light Group Dimmer** ist eine benutzerdefinierte Integration für [Home Assistant](https://www.home-assistant.io/), mit der du mehrere Lampen zu Gruppen zusammenfassen und gemeinsam dimmen kannst.
 
-Diese Integration orientiert sich am Dimmverhalten von Hue und berücksichtigt, dass die Ausgangshelligkeit einzelner Lampen innerhalb einer Gruppe variieren kann. Beim Dimmen wird die Helligkeitsanpassung nicht gleichmäßig verteilt – Lampen, die bereits sehr hell sind, erhalten proportionell weniger zusätzliche Helligkeit, während dunklere Lampen stärker angehoben werden. So wird eine ausgewogene und harmonische Lichtbalance in der gesamten Gruppe erreicht.
+Diese Integration orientiert sich am Dimmverhalten von Hue und berücksichtigt, dass die Ausgangshelligkeit einzelner Lampen innerhalb einer Gruppe variieren kann. Beim Dimmen wird die Helligkeitsanpassung nicht gleichmäßig verteilt – Lampen, die bereits sehr hell sind, erhalten proportional weniger zusätzliche Helligkeit, während dunklere Lampen stärker angehoben werden. So bleibt die Lichtbalance in der gesamten Gruppe erhalten. Die Berechnung ist gegen reale Hue-Referenzmessungen getestet (siehe `tests/`).
 
-In der Hue App kann man durch Drücken und Halten des Schiebereglers experimentell die gewünschte Helligkeit einstellen. Da Home Assistant dieses "Drücken und Halten" des Sliders nicht unterstützt, wurde ein Delay implementiert. Während dieser Verzögerungszeit wird die ursprüngliche Helligkeit in dem Cache gespeichert und als Grundlage für die anschließende gewichtete und interavtive Berechnung der Helligkeit der einzelnen Lampen herangezogen.
+In der Hue-App kann man durch Drücken und Halten des Schiebereglers experimentell die gewünschte Helligkeit einstellen. Da Home Assistant dieses „Drücken und Halten" nicht kennt, arbeitet die Integration mit einem **Delay**: Beim ersten Slider-Befehl wird die ursprüngliche Helligkeitsverteilung der Lampen zwischengespeichert. Alle weiteren Helligkeitsänderungen innerhalb des Delays rechnen auf dieser Original-Verteilung – du kannst also hoch- und wieder herunterdimmen und landest exakt beim Ausgangsbild. Der Delay misst dabei die **Ruhezeit nach dem letzten Slider-Befehl**; erst danach wird die aktuelle Verteilung zur neuen Ausgangsbasis.
 
-
-Bitte beachtet, dass ich kein Programmierer bin und mir den code in meiner Freizeit erarbeitet habe. Ich habe die Integration bisher nur in Kombination mit einer Hue Bridge getestet. 
+Bitte beachtet, dass ich kein Programmierer bin und mir den Code in meiner Freizeit erarbeitet habe. Getestet wird primär mit einer Hue Bridge; die Integration nutzt aber ausschließlich die Standard-Licht-Services von Home Assistant und ist nicht auf Hue beschränkt.
 
 ## Inhalt
 
@@ -24,64 +23,51 @@ Bitte beachtet, dass ich kein Programmierer bin und mir den code in meiner Freiz
   - [YAML-Konfiguration](#yaml-konfiguration)
   - [UI-Konfiguration (Config Flow)](#ui-konfiguration-config-flow)
 - [Verwendung](#verwendung)
-- [Bekannte Probleme und Verbesserungen](#bekannte-probleme-und-verbesserungen)
+- [Tests](#tests)
+- [Hinweise](#hinweise)
 - [Beitrag leisten](#beitrag-leisten)
 - [Lizenz](#lizenz)
 
 ## Features
 
-- **Gruppensteuerung:** Fasse mehrere Lichtentitäten zu einer Gruppe zusammen und steuere sie gemeinsam.
-- **Globaler Delay:** Lege einen globalen Verzögerungswert (Delay) fest, der für alle gruppenweiten Dimm-Operationen gilt.
-- **Weighted Dimming:** Nutzt eine iterative, gewichtete Berechnungslogik, um Helligkeitsänderungen möglichst gleichmäßig zu verteilen.
-- **Unterstützung für YAML und UI:** Du kannst Gruppen und Delay entweder über die `configuration.yaml` oder über den integrierten Config Flow in Home Assistant konfigurieren.
-- **Einschaltverhalten:** Es werden nur Lampen beim Dimmen berücksichtigt, die bereits eingeschaltet sind
-- **Helligkeitsspeicherung** Die Hue bridge speichert die letzten Einstellungen der Lampen. Beim reinen Einschalten einer Gruppe werden genau diese wieder aufgerufen. Möchte man alle Lampen mit der gleichen Helligkeit einschalten, dann muss man bei ausgeschalteter Gruppe direkt die Helligkeit über den Regler einstellen. 
+- **Gruppensteuerung:** Fasse mehrere Lichtentitäten zu einer Gruppe zusammen und steuere sie gemeinsam. Geräte ohne Helligkeit (z. B. Smart Plugs) können Mitglied sein – sie schalten mit, werden beim Dimmen aber ignoriert.
+- **Weighted Dimming:** Gewichtete Berechnung nach Hue-Vorbild – die Helligkeitsverhältnisse der Lampen bleiben beim Dimmen erhalten. Es werden nur Lampen berücksichtigt, die eingeschaltet sind.
+- **Globaler Delay:** Ruhezeit nach dem letzten Slider-Befehl, in der die Original-Verteilung als Rechenbasis erhalten bleibt (Standard: 5 s).
+- **Sofortige Reaktion:** Die Gruppe ist vollständig event-getrieben. Der Helligkeitsregler reagiert unmittelbar und springt beim Dimmen nicht durch Zwischenwerte.
+- **Farbtemperatur in Kelvin:** Durchgängig `color_temp_kelvin` (HA-Standard); die Kelvin-Grenzen der Gruppe ergeben sich automatisch aus den Mitgliedern.
+- **Übergangszeiten:** `transition:` aus Szenen, Automationen und Service-Aufrufen wird an die Lampen durchgereicht.
+- **YAML und UI:** Gruppen und Delay per `configuration.yaml` oder über den Config Flow; UI-Gruppen lassen sich nachträglich umbenennen, ohne dass eine neue Entity entsteht.
+- **Diagnose:** Unter *Geräte & Dienste → Light Group Dimmer → Diagnose herunterladen* gibt es einen JSON-Dump für Fehlerberichte.
+- **Einschaltverhalten:** Beim reinen Einschalten stellt z. B. die Hue Bridge die letzten Lampenzustände wieder her. Wer alle Lampen mit gleicher Helligkeit einschalten will, stellt bei ausgeschalteter Gruppe direkt die Helligkeit über den Regler ein.
 
 ## Installation
 
-1. **Voraussetzungen:**  
-   Stelle sicher, dass du Home Assistant in einer Version ≥ 2025.2 (oder kompatibel mit Custom Components) installiert hast.
+Voraussetzung: Home Assistant ≥ 2024.12.
 
-2. **Download:**  
-   Lade den Quellcode von [GitHub](https://github.com/xHecktor/light_group_dimmer) herunter
-   
-4. **Installation:**
-Kopiere den Inhalt des Repositorys in das Verzeichnis custom_components/light_group_dimmer in deinem Home Assistant-Konfigurationsverzeichnis.
-
-5. **Neustart:**
-Starte Home Assistant neu, damit die Integration erkannt und initialisiert wird.
-
-
-## Installation
+### Über HACS (empfohlen)
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=xHecktor&repository=light_group_dimmer&category=integration)
 
-or 
+oder manuell in HACS:
 
-1. Stell sicher das [HACS](https://hacs.xyz) installiert ist.
-2. Füge in HACS die Benutzerdefinierte Repositories: **xHecktor/Light-Group-Dimmer** Typ:**Integration** hinzu
-3. Füge die **light_group_dimmer** Integration in **Geräte & Dienste**  in den Einstellungen zu Home Assistant hinzu:
+1. Stelle sicher, dass [HACS](https://hacs.xyz) installiert ist.
+2. Füge in HACS das benutzerdefinierte Repository **xHecktor/light_group_dimmer** (Typ: **Integration**) hinzu.
+3. Installiere **Light Group Dimmer** und starte Home Assistant neu.
+4. Füge die Integration unter **Einstellungen → Geräte & Dienste** hinzu.
 
+*Beta-Versionen:* In HACS beim Repository „Redownload" wählen und „Show beta versions" aktivieren.
 
-   
+### Manuell
 
-Wenn du es manuell installieren möchtest:
-
-2. Lade den Quellcode von [GitHub](https://github.com/xHecktor/Light-Group-Dimmer/tree/main/custom_components/light_group_dimmer) herunter
-3. Kopiere die Dateien des Repositorys in das Verzeichnis custom_components/light_group_dimmer in deinem Home Assistant-Konfigurationsverzeichnis.
-
-
-
-
-
-
+1. Lade den Quellcode von [GitHub](https://github.com/xHecktor/light_group_dimmer) herunter.
+2. Kopiere `custom_components/light_group_dimmer` in das `custom_components`-Verzeichnis deiner Home-Assistant-Konfiguration.
+3. Starte Home Assistant neu.
 
 ## Konfiguration
+
 ### YAML-Konfiguration
-Du kannst den Delay-Wert und Gruppen auch über YAML konfigurieren. Füge dazu beispielsweise folgenden Abschnitt in deine configuration.yaml ein:
 
-
-```
+```yaml
 light_group_dimmer:
   delay: 5
   groups:
@@ -95,40 +81,38 @@ light_group_dimmer:
         - light.schlafzimmer_decke_2
 ```
 
-Wird YAML konfiguriert, übernimmt die Integration den Delay-Wert aus der YAML-Konfiguration und aktualisiert automatisch den Master-Eintrag. YAML-basierte Gruppen sind dann nicht über den UI-OptionsFlow änderbar und es ist anschließend ein Neustart von HA notwendig.
+Wird YAML konfiguriert, hat der YAML-Delay Vorrang und der Master-Eintrag ist schreibgeschützt. YAML-Gruppen sind nicht über den UI-OptionsFlow änderbar; Änderungen an der YAML werden mit einem Neustart von HA wirksam.
 
 ### UI-Konfiguration (Config Flow)
-Falls du lieber die Benutzeroberfläche nutzt, kannst du Gruppen über den Config Flow anlegen und bearbeiten. Beachte dabei:
 
-- Beim ersten Start wird automatisch ein Master-Eintrag "Global Delay Settings" erstellt, falls noch keiner vorhanden ist. Dieser Eintrag wird als Master (globaler Delay) geführt und ist schreibgeschützt, wenn YAML aktiv ist.
-- Neue Gruppen (Typ "group") können über den Config Flow erstellt und über die Options im UI geändert werden. Änderungen werden in entry.options gespeichert und beim nächsten Reload übernommen.
-- Die master-Option dient nur als Backup, falls "Global Delay Settings" Eintrag gelöscht oder nicht erstellt wurde. Der "Global Delay Settings" darf somit nur einmal vorliegen). 
-- Falls Lichtgruppen über yaml erstellt wurden, werden die Entities in dem Eintrag "Imported from YAML" oder evtl. in  "Global Delay Settings" zusammengefasst. Änderungen der yaml Einträge werden nur über ein Neustart von HA wirksam
-
+- Beim ersten Start wird automatisch ein Master-Eintrag **„Global Delay Settings"** erstellt (globaler Delay). Er darf nur einmal existieren; die manuelle „master"-Option im Dialog dient nur als Backup, falls er gelöscht wurde.
+- Neue Gruppen (Typ „group") werden über den Config Flow erstellt und über die Options im UI geändert (Name und Entitäten). Umbenennen erhält die Entity samt Historie und Automationen.
+- YAML-Gruppen erscheinen gesammelt im Eintrag **„Imported from YAML"**.
 
 ## Verwendung
-**Steuerung über Home Assistant:**
-Sobald die Integration eingerichtet ist, erscheinen deine Gruppen als Lichtentitäten in Home Assistant. Du kannst sie über die Standard-Lichtsteuerung (Dashboard, Automatisierungen, Sprachassistenten) steuern.
 
-**Dimmen:**
-Die integrierte gewichtete Dimmlogik sorgt dafür, dass sich alle Lampen in der Gruppe gleichmäßig dimmen – unter Berücksichtigung des globalen Delay-Werts. Der Delay-Timer wird jedesmal zurück gesetzt, wenn eine erneute Ändeurng der Helligkeit erfolgt und der alte Timer noch nicht abgelaufen ist
+**Steuerung:** Die Gruppen erscheinen als normale Lichtentitäten und lassen sich über Dashboard, Automatisierungen und Sprachassistenten steuern – inklusive `transition:` in Service-Aufrufen.
 
+**Dimmen:** Die gewichtete Dimmlogik verteilt Änderungen proportional. Der Delay-Timer startet mit jedem Helligkeitsbefehl neu; solange er läuft, rechnet die Gruppe auf der ursprünglichen Verteilung weiter (Hue-„Drücken-und-Halten"-Verhalten).
 
-## Bekannte Probleme und Verbesserungen
-**Delay-Anpassung:**
-Es kann vorkommen, dass der Delay-Wert um 2–5 Sekunden zu hoch eingestellt werden muss, damit die Cache-Logik stabil arbeitet. Dies liegt an den asynchronen Updates, dem iterativen Dimm-Verfahren und Netzwerk-/Systemlatenzen.
-Verbesserungsvorschlag:
-Ein Debounce-Mechanismus oder dynamische Verzögerungsberechnung könnte hier helfen, die Logik weiter zu optimieren.
+## Tests
 
-**Race Conditions und Cache-Management:**
-Durch die iterative Berechnung und das asynchrone Event-Handling können in manchen Fällen Race Conditions auftreten. Eine Überarbeitung der Cache-Logik (z. B. durch asynchrone Queues) ist denkbar.
+Im Repository liegt ein vollständiges Testpaket:
 
-**Farbmodi und Effekte:**
-Bei bestimmten Kombinationen von Farbmodi und Effekten kann es zu Warnungen kommen. Bitte melde solche Fälle, damit die Integration weiter verbessert werden kann.
+- `tests/test_brightness.py` – Regressionstest der Dimm-Mathematik gegen 37 reale Hue-Referenzmessungen (läuft in der CI bei jedem Push).
+- `docs/TESTPLAN.md` + `docs/test_scripts.yaml` – Skripte, die alle Testfälle direkt in Home Assistant durchfahren und die Ergebnisse in eine Datei schreiben.
+- `tests/evaluate_results.py` – wertet diese Ergebnisdatei als Pass/Fail-Tabelle aus.
+
+## Hinweise
+
+- **±1–2 % Abweichung** zwischen kommandierten und angezeigten Werten sind normal (Umrechnung Prozent ↔ 0–255 plus Rundung der Lampen-Firmware).
+- **Effekte:** Die Gruppe bietet die Vereinigung aller Mitglieds-Effekte an; Lampen, die einen gewählten Effekt nicht kennen, ignorieren ihn.
+- **Dynamische Hue-Szenen** sind ein Bridge-Feature und werden über die Hue-Integration gestartet (`hue.activate_scene` mit `dynamic: true`); die Gruppe zieht die Lampenzustände automatisch nach.
 
 ## Beitrag leisten
-Beiträge zur Weiterentwicklung der Integration sind willkommen!
-Bitte reiche Pull Requests ein oder eröffne ein Issue, wenn du Fehler findest oder neue Features implementieren möchtest.
+
+Beiträge sind willkommen! Bitte reiche Pull Requests ein oder eröffne ein Issue, wenn du Fehler findest oder Features vorschlagen möchtest. Bei Fehlerberichten hilft der Diagnose-Download (s. o.) sehr.
 
 ## Lizenz
+
 Dieses Projekt steht unter der MIT-Lizenz.
