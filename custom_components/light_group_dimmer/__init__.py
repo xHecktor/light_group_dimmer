@@ -1,7 +1,9 @@
 import logging
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.const import CONF_NAME
+import homeassistant.helpers.config_validation as cv
 from .const import (
     DOMAIN,
     CONF_TYPE,
@@ -15,6 +17,22 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = ["light"]
+
+# Schema der optionalen YAML-Konfiguration (validiert Nutzereingaben beim Start)
+GROUP_SCHEMA = vol.Schema({
+    vol.Required(CONF_NAME): cv.string,
+    vol.Required(CONF_ENTITIES): cv.entity_ids,
+})
+
+CONFIG_SCHEMA = vol.Schema(
+    {
+        DOMAIN: vol.Schema({
+            vol.Optional(CONF_DELAY, default=DEFAULT_DELAY): cv.positive_int,
+            vol.Optional(CONF_GROUPS, default=[]): vol.All(cv.ensure_list, [GROUP_SCHEMA]),
+        })
+    },
+    extra=vol.ALLOW_EXTRA,
+)
 
 
 async def async_setup(hass: HomeAssistant, config: dict):
