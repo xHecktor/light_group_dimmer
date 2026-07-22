@@ -26,9 +26,12 @@ GROUP_SCHEMA = vol.Schema({
 
 CONFIG_SCHEMA = vol.Schema(
     {
+        # Bewusst OHNE Defaults: Ein Default würde delay/groups auch dann in die
+        # Konfiguration schreiben, wenn der Nutzer sie gar nicht angegeben hat –
+        # das würde fälschlich "YAML setzt den Delay" auslösen und die UI sperren.
         DOMAIN: vol.Schema({
-            vol.Optional(CONF_DELAY, default=DEFAULT_DELAY): cv.positive_int,
-            vol.Optional(CONF_GROUPS, default=[]): vol.All(cv.ensure_list, [GROUP_SCHEMA]),
+            vol.Optional(CONF_DELAY): cv.positive_int,
+            vol.Optional(CONF_GROUPS): vol.All(cv.ensure_list, [GROUP_SCHEMA]),
         })
     },
     extra=vol.ALLOW_EXTRA,
