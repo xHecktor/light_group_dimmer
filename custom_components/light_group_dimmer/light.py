@@ -145,6 +145,9 @@ class CustomLightGroup(LightEntity):
         # selbst ausgelösten Kommandos auf dem Zielwert, damit der Regler nicht durch
         # die Zwischenmittelwerte der nacheinander meldenden Lampen springt.
         self._optimistic_brightness = None
+        # Analog für Farbe/Farbtemperatur: dict mit color_mode und dem jeweils
+        # kommandierten Wert (color_temp_kelvin / hs_color / xy_color) oder None.
+        self._optimistic_color = None
         self._optimistic_until = 0.0
         self._optimistic_task = None
         self._brightness_cache = {}  # {group_id: {"group_brightness", "lamp_brightnesses", "timer"}}
@@ -171,7 +174,7 @@ class CustomLightGroup(LightEntity):
         self.async_on_remove(async_at_start(self.hass, self._async_on_ha_start))
 
         # Beim Entfernen/Reload einen evtl. laufenden Reconcile-Task abbrechen.
-        self.async_on_remove(self._clear_optimistic_brightness)
+        self.async_on_remove(self._clear_optimistic)
 
     async def _async_on_ha_start(self, _hass):
         """Nach vollständigem HA-Start erneut aktualisieren (spät registrierte Lampen)."""
@@ -336,7 +339,7 @@ class CustomLightGroup(LightEntity):
         if self._optimistic_brightness is not None and time.monotonic() < self._optimistic_until:
             # Früh-Löser: Sobald der echte Mittelwert nahe genug am Zielwert ist,
             # das Pinning sofort beenden (kleine/schnelle Gruppen lösen dann nach
-            # ~0,5 s statt fix 2 s). Der Timeout in _reconcile_brightness bleibt als
+            # ~0,5 s statt fix 2 s). Der Timeout in _reconcile_optimistic bleibt als
             # Obergrenze, falls eine Lampe gar nicht (mehr) meldet -> kein Einfrieren.
             if abs(computed_brightness - self._optimistic_brightness) <= self._OPTIMISTIC_TOLERANCE:
                 self._optimistic_brightness = None
@@ -435,6 +438,22 @@ class CustomLightGroup(LightEntity):
             else:
                 self._color_mode = next(iter(self._supported_color_modes), ColorMode.ONOFF)
 
+        # Optimistische Farbanzeige: während des Settle-Fensters den kommandierten
+        # Farbmodus + Farbwert halten, sonst die echten Ist-Werte übernehmen
+        # (verhindert das Springen der Farb-/Farbtemperatur-Regler).
+        if self._optimistic_color is not None and time.monotonic() < self._optimistic_until:
+            oc = self._optimistic_color
+            if "color_mode" in oc:
+                self._color_mode = oc["color_mode"]
+            if "color_temp_kelvin" in oc:
+                self._color_temp_kelvin = oc["color_temp_kelvin"]
+            if "hs_color" in oc:
+                self._hs_color = oc["hs_color"]
+            if "xy_color" in oc:
+                self._xy_color = oc["xy_color"]
+        else:
+            self._optimistic_color = None
+
         # Sammle Effekte
         effects = [
             state.attributes.get(ATTR_EFFECT)
@@ -507,10 +526,17 @@ class CustomLightGroup(LightEntity):
         new_transition = kwargs.get(ATTR_TRANSITION)
 
         # Optimistisch: die eigene Gruppen-Entity sofort aktualisieren, damit die UI
-        # reagiert. Bei einer Helligkeitsänderung den Zielwert pinnen (kein Springen
-        # des Reglers). Echte Lampen-States kommen anschließend per Event zurück.
+        # reagiert. Kommandierte Helligkeit/Farbe/Farbtemperatur pinnen (kein Springen
+        # der Regler). Echte Lampen-States kommen anschließend per Event zurück.
         if new_brightness is not None:
             self._pin_optimistic_brightness(new_brightness)
+        # Reihenfolge wie in _build_color_service_data: hs vor xy vor Farbtemperatur.
+        if new_hs_color is not None:
+            self._pin_optimistic_color({"color_mode": ColorMode.HS, "hs_color": new_hs_color})
+        elif new_xy_color is not None:
+            self._pin_optimistic_color({"color_mode": ColorMode.XY, "xy_color": new_xy_color})
+        elif new_kelvin is not None:
+            self._pin_optimistic_color({"color_mode": ColorMode.COLOR_TEMP, "color_temp_kelvin": new_kelvin})
         self.async_write_ha_state()
 
         group_is_on = self.is_group_on()
@@ -642,6 +668,13 @@ class CustomLightGroup(LightEntity):
     # Zielwert, gilt die Gruppe als "angekommen" (~2 % von 255).
     _OPTIMISTIC_TOLERANCE = 5
 
+    def _touch_optimistic_window(self):
+        """Startet/verlängert das gemeinsame Settle-Fenster und plant den Reconcile."""
+        self._optimistic_until = time.monotonic() + self._OPTIMISTIC_SETTLE_SECONDS
+        if self._optimistic_task:
+            self._optimistic_task.cancel()
+        self._optimistic_task = self.hass.async_create_task(self._reconcile_optimistic())
+
     def _pin_optimistic_brightness(self, value):
         """
         Zeigt die kommandierte Gruppenhelligkeit sofort an und hält sie für ein kurzes
@@ -651,24 +684,41 @@ class CustomLightGroup(LightEntity):
         """
         self._optimistic_brightness = value
         self._brightness = value
-        self._optimistic_until = time.monotonic() + self._OPTIMISTIC_SETTLE_SECONDS
-        if self._optimistic_task:
-            self._optimistic_task.cancel()
-        self._optimistic_task = self.hass.async_create_task(self._reconcile_brightness())
+        self._touch_optimistic_window()
 
-    def _clear_optimistic_brightness(self):
-        """Beendet das Pinnen (z. B. beim Ausschalten)."""
+    def _pin_optimistic_color(self, color):
+        """
+        Hält Farbmodus + kommandierte Farbe/Farbtemperatur während des Settle-Fensters,
+        damit die Farb-/Farbtemperatur-Regler nicht durch die Zwischenwerte der Lampen
+        springen. 'color' ist ein dict mit color_mode und einem von
+        color_temp_kelvin / hs_color / xy_color.
+        """
+        self._optimistic_color = color
+        if "color_mode" in color:
+            self._color_mode = color["color_mode"]
+        if "color_temp_kelvin" in color:
+            self._color_temp_kelvin = color["color_temp_kelvin"]
+        if "hs_color" in color:
+            self._hs_color = color["hs_color"]
+        if "xy_color" in color:
+            self._xy_color = color["xy_color"]
+        self._touch_optimistic_window()
+
+    def _clear_optimistic(self):
+        """Beendet das Pinnen (Helligkeit und Farbe), z. B. beim Ausschalten."""
         self._optimistic_brightness = None
+        self._optimistic_color = None
         self._optimistic_until = 0.0
         if self._optimistic_task:
             self._optimistic_task.cancel()
             self._optimistic_task = None
 
-    async def _reconcile_brightness(self):
-        """Übernimmt nach Ablauf des Settle-Fensters wieder den echten Ist-Mittelwert."""
+    async def _reconcile_optimistic(self):
+        """Übernimmt nach Ablauf des Settle-Fensters wieder die echten Ist-Werte."""
         try:
             await asyncio.sleep(self._OPTIMISTIC_SETTLE_SECONDS + 0.1)
             self._optimistic_brightness = None
+            self._optimistic_color = None
             self._optimistic_task = None
             await self.async_update()
         except asyncio.CancelledError:
@@ -679,7 +729,7 @@ class CustomLightGroup(LightEntity):
         self._is_on = False
         # Optimistisch: Gruppe sofort als "aus" melden, damit der Helligkeitsbalken
         # nicht auf die Bestätigung der Lampen warten muss.
-        self._clear_optimistic_brightness()
+        self._clear_optimistic()
         self.async_write_ha_state()
 
         transition = kwargs.get(ATTR_TRANSITION)
