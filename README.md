@@ -14,112 +14,116 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/xHecktor/light_group_dimmer" alt="License"></a>
 </p>
 
-**Light Group Dimmer** ist eine benutzerdefinierte Integration für [Home Assistant](https://www.home-assistant.io/), mit der du mehrere Lampen zu Gruppen zusammenfassen und gemeinsam dimmen kannst.
+<p align="center">
+  <b>English</b> | <a href="README.de.md">Deutsch</a>
+</p>
 
-Diese Integration orientiert sich am Dimmverhalten von Hue und berücksichtigt, dass die Ausgangshelligkeit einzelner Lampen innerhalb einer Gruppe variieren kann. Beim Dimmen wird die Helligkeitsanpassung nicht gleichmäßig verteilt – Lampen, die bereits sehr hell sind, erhalten proportional weniger zusätzliche Helligkeit, während dunklere Lampen stärker angehoben werden. So bleibt die Lichtbalance in der gesamten Gruppe erhalten. Die Berechnung ist gegen reale Hue-Referenzmessungen getestet (siehe `tests/`).
+**Light Group Dimmer** is a custom integration for [Home Assistant](https://www.home-assistant.io/) that lets you combine several lights into groups and dim them together.
 
-In der Hue-App kann man durch Drücken und Halten des Schiebereglers experimentell die gewünschte Helligkeit einstellen. Da Home Assistant dieses „Drücken und Halten" nicht kennt, arbeitet die Integration mit einem **Delay**: Beim ersten Slider-Befehl wird die ursprüngliche Helligkeitsverteilung der Lampen zwischengespeichert. Alle weiteren Helligkeitsänderungen innerhalb des Delays rechnen auf dieser Original-Verteilung – du kannst also hoch- und wieder herunterdimmen und landest exakt beim Ausgangsbild. Der Delay misst dabei die **Ruhezeit nach dem letzten Slider-Befehl**; erst danach wird die aktuelle Verteilung zur neuen Ausgangsbasis.
+It mimics the dimming behaviour of Philips Hue and accounts for the fact that individual lamps within a group can start at different brightness levels. When dimming, the change is **not** distributed evenly: lamps that are already bright receive proportionally less of the increase, while darker lamps are raised more. This keeps the light balance of the whole group intact. The calculation is tested against real Hue reference measurements (see `tests/`).
 
-Bitte beachtet, dass ich kein Programmierer bin und mir den Code in meiner Freizeit erarbeitet habe. Getestet wird primär mit einer Hue Bridge; die Integration nutzt aber ausschließlich die Standard-Licht-Services von Home Assistant und ist nicht auf Hue beschränkt.
+In the Hue app you can press and hold the slider to experiment with the desired brightness. Home Assistant has no "press and hold", so the integration uses a **delay** instead: on the first slider command, the original brightness distribution of the lamps is cached. Every further brightness change within the delay is computed from that original distribution — so you can dim up and back down and land exactly on the starting picture. The delay measures the **idle time after the last slider command**; only then does the current distribution become the new baseline.
 
-## Inhalt
+Please note that I'm not a professional developer and built this in my spare time. It's tested primarily with a Hue Bridge, but the integration only uses the standard Home Assistant light services and is **not** limited to Hue.
+
+## Contents
 
 - [Features](#features)
 - [Installation](#installation)
-- [Konfiguration](#konfiguration)
-  - [YAML-Konfiguration](#yaml-konfiguration)
-  - [UI-Konfiguration (Config Flow)](#ui-konfiguration-config-flow)
-- [Verwendung](#verwendung)
+- [Configuration](#configuration)
+  - [YAML configuration](#yaml-configuration)
+  - [UI configuration (config flow)](#ui-configuration-config-flow)
+- [Usage](#usage)
 - [Tests](#tests)
-- [Hinweise](#hinweise)
-- [Beitrag leisten](#beitrag-leisten)
-- [Lizenz](#lizenz)
+- [Notes](#notes)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Features
 
-- **Gruppensteuerung:** Fasse mehrere Lichtentitäten zu einer Gruppe zusammen und steuere sie gemeinsam. Geräte ohne Helligkeit (z. B. Smart Plugs) können Mitglied sein – sie schalten mit, werden beim Dimmen aber ignoriert.
-- **Weighted Dimming:** Gewichtete Berechnung nach Hue-Vorbild – die Helligkeitsverhältnisse der Lampen bleiben beim Dimmen erhalten. Es werden nur Lampen berücksichtigt, die eingeschaltet sind.
-- **Globaler Delay:** Ruhezeit nach dem letzten Slider-Befehl, in der die Original-Verteilung als Rechenbasis erhalten bleibt (Standard: 5 s).
-- **Sofortige Reaktion:** Die Gruppe ist vollständig event-getrieben. Der Helligkeitsregler reagiert unmittelbar und springt beim Dimmen nicht durch Zwischenwerte.
-- **Farbtemperatur in Kelvin:** Durchgängig `color_temp_kelvin` (HA-Standard); die Kelvin-Grenzen der Gruppe ergeben sich automatisch aus den Mitgliedern.
-- **Übergangszeiten:** `transition:` aus Szenen, Automationen und Service-Aufrufen wird an die Lampen durchgereicht.
-- **YAML und UI:** Gruppen und Delay per `configuration.yaml` oder über den Config Flow; UI-Gruppen lassen sich nachträglich umbenennen, ohne dass eine neue Entity entsteht.
-- **Diagnose:** Unter *Geräte & Dienste → Light Group Dimmer → Diagnose herunterladen* gibt es einen JSON-Dump für Fehlerberichte.
-- **Einschaltverhalten:** Beim reinen Einschalten stellt z. B. die Hue Bridge die letzten Lampenzustände wieder her. Wer alle Lampen mit gleicher Helligkeit einschalten will, stellt bei ausgeschalteter Gruppe direkt die Helligkeit über den Regler ein.
+- **Group control:** Combine several light entities into a group and control them together. Devices without brightness (e.g. smart plugs) can be members — they switch along but are ignored while dimming.
+- **Weighted dimming:** Hue-style weighted calculation — the brightness ratios between lamps are preserved while dimming. Only lamps that are switched on are taken into account.
+- **Global delay:** Idle time after the last slider command during which the original distribution stays the calculation baseline (default: 5 s).
+- **Instant response:** The group is fully event-driven. The sliders react immediately and don't jump through intermediate values while dimming.
+- **Color temperature in Kelvin:** Uses `color_temp_kelvin` throughout (the HA standard); the group's Kelvin range is derived automatically from its members.
+- **Transitions:** `transition:` from scenes, automations and service calls is passed through to the lamps.
+- **YAML and UI:** Configure groups and delay via `configuration.yaml` or the config flow; UI groups can be renamed later without creating a new entity.
+- **Diagnostics:** Under *Settings → Devices & Services → Light Group Dimmer → Download diagnostics* you get a JSON dump for bug reports.
+- **Turn-on behaviour:** On a plain turn-on the bridge (e.g. Hue) restores the lamps' last states. To switch all lamps on at the same brightness, set the brightness via the slider while the group is off.
 
 ## Installation
 
-Voraussetzung: Home Assistant ≥ 2024.12.
+Requirement: Home Assistant ≥ 2024.12.
 
-### Über HACS (empfohlen)
+### Via HACS (recommended)
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=xHecktor&repository=light_group_dimmer&category=integration)
 
-oder manuell in HACS:
+or manually in HACS:
 
-1. Stelle sicher, dass [HACS](https://hacs.xyz) installiert ist.
-2. Füge in HACS das benutzerdefinierte Repository **xHecktor/light_group_dimmer** (Typ: **Integration**) hinzu.
-3. Installiere **Light Group Dimmer** und starte Home Assistant neu.
-4. Füge die Integration unter **Einstellungen → Geräte & Dienste** hinzu.
+1. Make sure [HACS](https://hacs.xyz) is installed.
+2. Add the custom repository **xHecktor/light_group_dimmer** (type: **Integration**) in HACS.
+3. Install **Light Group Dimmer** and restart Home Assistant.
+4. Add the integration under **Settings → Devices & Services**.
 
-*Beta-Versionen:* In HACS beim Repository „Redownload" wählen und „Show beta versions" aktivieren.
+*Beta versions:* In HACS choose "Redownload" on the repository and enable "Show beta versions".
 
-### Manuell
+### Manual
 
-1. Lade den Quellcode von [GitHub](https://github.com/xHecktor/light_group_dimmer) herunter.
-2. Kopiere `custom_components/light_group_dimmer` in das `custom_components`-Verzeichnis deiner Home-Assistant-Konfiguration.
-3. Starte Home Assistant neu.
+1. Download the source from [GitHub](https://github.com/xHecktor/light_group_dimmer).
+2. Copy `custom_components/light_group_dimmer` into the `custom_components` directory of your Home Assistant configuration.
+3. Restart Home Assistant.
 
-## Konfiguration
+## Configuration
 
-### YAML-Konfiguration
+### YAML configuration
 
 ```yaml
 light_group_dimmer:
   delay: 5
   groups:
-    - name: "Wohnzimmer Gruppe"
+    - name: "Living Room Group"
       entities:
-        - light.wohnzimmer_decke_1
-        - light.wohnzimmer_decke_2
-    - name: "Schlafzimmer Gruppe"
+        - light.living_room_ceiling_1
+        - light.living_room_ceiling_2
+    - name: "Bedroom Group"
       entities:
-        - light.schlafzimmer_decke_1
-        - light.schlafzimmer_decke_2
+        - light.bedroom_ceiling_1
+        - light.bedroom_ceiling_2
 ```
 
-Wird YAML konfiguriert, hat der YAML-Delay Vorrang und der Master-Eintrag ist schreibgeschützt. YAML-Gruppen sind nicht über den UI-OptionsFlow änderbar; Änderungen an der YAML werden mit einem Neustart von HA wirksam.
+When configured via YAML, the YAML delay takes precedence and the master entry becomes read-only. YAML groups cannot be edited through the UI options flow; changes to the YAML take effect after a Home Assistant restart.
 
-### UI-Konfiguration (Config Flow)
+### UI configuration (config flow)
 
-- Beim ersten Start wird automatisch ein Master-Eintrag **„Global Delay Settings"** erstellt (globaler Delay). Er darf nur einmal existieren; die manuelle „master"-Option im Dialog dient nur als Backup, falls er gelöscht wurde.
-- Neue Gruppen (Typ „group") werden über den Config Flow erstellt und über die Options im UI geändert (Name und Entitäten). Umbenennen erhält die Entity samt Historie und Automationen.
-- YAML-Gruppen erscheinen gesammelt im Eintrag **„Imported from YAML"**.
+- On first start a master entry **"Global Delay Settings"** is created automatically (global delay). It must exist only once; the manual "master" option in the dialog is only a backup in case it was deleted.
+- New groups (type "group") are created via the config flow and edited through the UI options (name and entities). Renaming keeps the entity along with its history and automations.
+- YAML groups appear collected under the **"Imported from YAML"** entry.
 
-## Verwendung
+## Usage
 
-**Steuerung:** Die Gruppen erscheinen als normale Lichtentitäten und lassen sich über Dashboard, Automatisierungen und Sprachassistenten steuern – inklusive `transition:` in Service-Aufrufen.
+**Control:** Groups appear as normal light entities and can be controlled from the dashboard, automations and voice assistants — including `transition:` in service calls.
 
-**Dimmen:** Die gewichtete Dimmlogik verteilt Änderungen proportional. Der Delay-Timer startet mit jedem Helligkeitsbefehl neu; solange er läuft, rechnet die Gruppe auf der ursprünglichen Verteilung weiter (Hue-„Drücken-und-Halten"-Verhalten).
+**Dimming:** The weighted dimming logic distributes changes proportionally. The delay timer restarts with every brightness command; while it runs, the group keeps computing from the original distribution (Hue "press and hold" behaviour).
 
 ## Tests
 
-Im Repository liegt ein vollständiges Testpaket:
+The repository ships a complete test package:
 
-- `tests/test_brightness.py` – Regressionstest der Dimm-Mathematik gegen 37 reale Hue-Referenzmessungen (läuft in der CI bei jedem Push).
-- `docs/TESTPLAN.md` + `docs/test_scripts.yaml` – Skripte, die alle Testfälle direkt in Home Assistant durchfahren und die Ergebnisse in eine Datei schreiben.
-- `tests/evaluate_results.py` – wertet diese Ergebnisdatei als Pass/Fail-Tabelle aus.
+- `tests/test_brightness.py` – regression test of the dimming math against 37 real Hue reference measurements (runs in CI on every push).
+- `docs/TESTPLAN.md` + `docs/test_scripts.yaml` – scripts that run all test cases directly in Home Assistant and write the results to a file.
+- `tests/evaluate_results.py` – turns that result file into a pass/fail table.
 
-## Hinweise
+## Notes
 
-- **±1–2 % Abweichung** zwischen kommandierten und angezeigten Werten sind normal (Umrechnung Prozent ↔ 0–255 plus Rundung der Lampen-Firmware).
-- **Effekte:** Die Gruppe bietet die Vereinigung aller Mitglieds-Effekte an; Lampen, die einen gewählten Effekt nicht kennen, ignorieren ihn.
-- **Dynamische Hue-Szenen** sind ein Bridge-Feature und werden über die Hue-Integration gestartet (`hue.activate_scene` mit `dynamic: true`); die Gruppe zieht die Lampenzustände automatisch nach.
+- **±1–2 % deviation** between commanded and displayed values is normal (percent ↔ 0–255 conversion plus rounding in the lamp firmware).
+- **Effects:** The group offers the union of all member effects; lamps that don't know a chosen effect simply ignore it.
+- **Dynamic Hue scenes** are a bridge feature and are started through the Hue integration (`hue.activate_scene` with `dynamic: true`); the group follows the lamp states automatically.
 
-## Beitrag leisten
+## Contributing
 
-Beiträge sind willkommen! Bitte reiche Pull Requests ein oder eröffne ein Issue, wenn du Fehler findest oder Features vorschlagen möchtest. Bei Fehlerberichten hilft der Diagnose-Download (s. o.) sehr.
+Contributions are welcome! Please open a pull request or an issue if you find bugs or want to suggest features. For bug reports, the diagnostics download (see above) helps a lot.
 
-## Lizenz
+## License
 
-Dieses Projekt steht unter der MIT-Lizenz.
+This project is licensed under the MIT License.
