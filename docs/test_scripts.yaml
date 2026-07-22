@@ -42,10 +42,13 @@
 # =====================================================================
 
 shell_command:
+  # Wichtig: HA führt shell_command OHNE Shell aus (kein >, |, >> ohne echte
+  # Shell). Deshalb explizit über "sh -c" leiten, damit die Umleitung wirkt.
+  # "sh" ist im HA-Container immer vorhanden (bash oft nicht).
   # Legt die Ergebnisdatei neu an (überschreibt einen alten Lauf):
-  dimmer_test_reset: 'echo "{{ line }}" > /config/dimmer_test_results.txt'
+  dimmer_test_reset: "sh -c 'echo \"{{ line }}\" > /config/dimmer_test_results.txt'"
   # Hängt eine Zeile an:
-  dimmer_test_log: 'echo "{{ line }}" >> /config/dimmer_test_results.txt'
+  dimmer_test_log: "sh -c 'echo \"{{ line }}\" >> /config/dimmer_test_results.txt'"
 
 template:
   - sensor:
