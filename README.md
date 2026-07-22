@@ -2,8 +2,8 @@
 
 
 <p align="center">
-  <a href="https://github.com/xHecktor/Light-Group-Dimmer/">
-    <img src="https://github.com/xHecktor/Light-Group-Dimmer/blob/main/images/logo.png" alt="Logo" height="200">
+  <a href="https://github.com/xHecktor/light_group_dimmer">
+    <img src="images/logo.png" alt="Logo" height="200">
   </a>
 </p>
 
