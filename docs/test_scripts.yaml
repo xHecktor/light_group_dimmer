@@ -4,27 +4,27 @@
 #  Fährt automatisch alle Testfälle durch und schreibt die Ergebnisse
 #  maschinenlesbar in /config/dimmer_test_results.txt.
 #
+#  Ergebnis-Logging via shell_command (Core, funktioniert in jeder
+#  HA-Version). Die früher genutzte notify-file-Plattform gibt es in
+#  aktuellen HA-Versionen nicht mehr ("Invalid notify platform").
+#
 #  EINRICHTUNG (einmalig) – zwei Wege:
 #
 #   EMPFOHLEN (wenn du Packages nutzt, d. h. in configuration.yaml steht
 #   "homeassistant: packages: !include_dir_named packages"):
 #     -> Diese Datei einfach als packages/lgd_test.yaml speichern. Fertig.
-#        notify/template/script werden automatisch dazugemerged, ohne dass
-#        du configuration.yaml oder scripts.yaml anfassen musst.
+#        shell_command/template/script werden automatisch dazugemerged,
+#        ohne dass du configuration.yaml oder scripts.yaml anfassen musst.
 #
 #   ALTERNATIV (ohne Packages):
-#     1) Die drei Blöcke (notify / template / script) in die passenden
-#        Stellen deiner Konfiguration übernehmen. Achtung: Liegt dein
-#        script: bereits in einer eigenen Datei (script: !include scripts.yaml),
-#        gehören die beiden Skripte OHNE den führenden "script:"-Schlüssel
-#        ans Ende von scripts.yaml; notify/template kommen in die
-#        configuration.yaml.
+#     -> Die drei Blöcke (shell_command / template / script) in die
+#        passenden Stellen deiner Konfiguration übernehmen.
 #
 #   Danach in beiden Fällen:
-#   2) HA neu starten (notify/template werden nur beim Neustart aktiv).
-#   3) WICHTIG: Delay der Integration auf 5 s stellen (Master-Eintrag),
+#   1) HA neu starten.
+#   2) WICHTIG: Delay der Integration auf 5 s stellen (Master-Eintrag),
 #      sonst stimmen die Delay-Testfälle (Block 1/2) nicht.
-#   4) Gruppe + Mitglieder unten ggf. an deine Testgruppe anpassen.
+#   3) Gruppe + Mitglieder unten ggf. an deine Testgruppe anpassen.
 #
 #  AUSFÜHREN:
 #   - Entwicklerwerkzeuge -> Aktionen -> script.lgd_test_gewichtet  (~6 min)
@@ -41,10 +41,11 @@
 #   ignoriert und stört die 3-Lampen-Auswertung nicht.)
 # =====================================================================
 
-notify:
-  - name: dimmer_test_log
-    platform: file
-    filename: dimmer_test_results.txt
+shell_command:
+  # Legt die Ergebnisdatei neu an (überschreibt einen alten Lauf):
+  dimmer_test_reset: 'echo "{{ line }}" > /config/dimmer_test_results.txt'
+  # Hängt eine Zeile an:
+  dimmer_test_log: 'echo "{{ line }}" >> /config/dimmer_test_results.txt'
 
 template:
   - sensor:
@@ -117,9 +118,9 @@ script:
         - [98, 97, 96, 99, 99, 99, 99]
         - [90, 100, 99, 99, 97, 100, 100]
     sequence:
-      - action: notify.dimmer_test_log
+      - action: shell_command.dimmer_test_reset
         data:
-          message: "RUN gewichtet start={{ now() }} delay_hinweis=bitte_5s"
+          line: "RUN gewichtet start={{ now() }} delay_hinweis=bitte_5s"
       - repeat:
           for_each: "{{ cases }}"
           sequence:
@@ -157,18 +158,18 @@ script:
               data: { brightness_pct: "{{ repeat.item[3] | int }}" }
             - delay: { seconds: "{{ wait_capture | int }}" }
             # --- Ergebnis maschinenlesbar loggen ---
-            - action: notify.dimmer_test_log
+            - action: shell_command.dimmer_test_log
               data:
-                message: >-
+                line: >-
                   TF{{ '%02d' % repeat.index }}
                   start={{ repeat.item[0] }}/{{ repeat.item[1] }}/{{ repeat.item[2] }}
                   ziel={{ repeat.item[3] }}
                   soll={{ repeat.item[4] }}/{{ repeat.item[5] }}/{{ repeat.item[6] }}
                   ist={{ (state_attr(l1,'brightness')|float(0)/2.55)|round|int if is_state(l1,'on') and state_attr(l1,'brightness') is not none else 0 }}/{{ (state_attr(l2,'brightness')|float(0)/2.55)|round|int if is_state(l2,'on') and state_attr(l2,'brightness') is not none else 0 }}/{{ (state_attr(l3,'brightness')|float(0)/2.55)|round|int if is_state(l3,'on') and state_attr(l3,'brightness') is not none else 0 }}
                   gruppe={{ (state_attr(grp,'brightness')|float(0)/2.55)|round|int if is_state(grp,'on') and state_attr(grp,'brightness') is not none else 0 }}
-      - action: notify.dimmer_test_log
+      - action: shell_command.dimmer_test_log
         data:
-          message: "END gewichtet"
+          line: "END gewichtet"
 
   # -------------------------------------------------------------------
   #  Test 2: Delay-/Cache-Verhalten (Block 1 != Block 2)
@@ -182,9 +183,9 @@ script:
       l2: light.hue_play_2
       l3: light.arbeitszimmer
     sequence:
-      - action: notify.dimmer_test_log
+      - action: shell_command.dimmer_test_log
         data:
-          message: "RUN delay start={{ now() }}"
+          line: "RUN delay start={{ now() }}"
 
       # ---------- Block 2: kurze Wartezeit (3s < 5s) => Cache lebt ----------
       # Erwartung: zurück zur Original-Verteilung ~37/72/89
@@ -201,9 +202,9 @@ script:
         target: { entity_id: "{{ grp }}" }
         data: { brightness_pct: 66 }
       - delay: { seconds: 4 }
-      - action: notify.dimmer_test_log
+      - action: shell_command.dimmer_test_log
         data:
-          message: >-
+          line: >-
             BLOCK2 wartezeit=3s erwartet=37/72/89
             ist={{ (state_attr(l1,'brightness')|float(0)/2.55)|round|int if is_state(l1,'on') else 0 }}/{{ (state_attr(l2,'brightness')|float(0)/2.55)|round|int if is_state(l2,'on') else 0 }}/{{ (state_attr(l3,'brightness')|float(0)/2.55)|round|int if is_state(l3,'on') else 0 }}
 
@@ -222,11 +223,11 @@ script:
         target: { entity_id: "{{ grp }}" }
         data: { brightness_pct: 66 }
       - delay: { seconds: 4 }
-      - action: notify.dimmer_test_log
+      - action: shell_command.dimmer_test_log
         data:
-          message: >-
+          line: >-
             BLOCK1 wartezeit=5.8s erwartet=65/66/67
             ist={{ (state_attr(l1,'brightness')|float(0)/2.55)|round|int if is_state(l1,'on') else 0 }}/{{ (state_attr(l2,'brightness')|float(0)/2.55)|round|int if is_state(l2,'on') else 0 }}/{{ (state_attr(l3,'brightness')|float(0)/2.55)|round|int if is_state(l3,'on') else 0 }}
-      - action: notify.dimmer_test_log
+      - action: shell_command.dimmer_test_log
         data:
-          message: "END delay"
+          line: "END delay"
