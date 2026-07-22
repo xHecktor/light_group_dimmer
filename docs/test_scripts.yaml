@@ -4,10 +4,24 @@
 #  Fährt automatisch alle Testfälle durch und schreibt die Ergebnisse
 #  maschinenlesbar in /config/dimmer_test_results.txt.
 #
-#  EINRICHTUNG (einmalig):
-#   1) Diese drei Blöcke (notify / script / template) in die
-#      configuration.yaml übernehmen (bzw. in die jeweiligen Includes).
-#   2) HA neu starten oder YAML neu laden.
+#  EINRICHTUNG (einmalig) – zwei Wege:
+#
+#   EMPFOHLEN (wenn du Packages nutzt, d. h. in configuration.yaml steht
+#   "homeassistant: packages: !include_dir_named packages"):
+#     -> Diese Datei einfach als packages/lgd_test.yaml speichern. Fertig.
+#        notify/template/script werden automatisch dazugemerged, ohne dass
+#        du configuration.yaml oder scripts.yaml anfassen musst.
+#
+#   ALTERNATIV (ohne Packages):
+#     1) Die drei Blöcke (notify / template / script) in die passenden
+#        Stellen deiner Konfiguration übernehmen. Achtung: Liegt dein
+#        script: bereits in einer eigenen Datei (script: !include scripts.yaml),
+#        gehören die beiden Skripte OHNE den führenden "script:"-Schlüssel
+#        ans Ende von scripts.yaml; notify/template kommen in die
+#        configuration.yaml.
+#
+#   Danach in beiden Fällen:
+#   2) HA neu starten (notify/template werden nur beim Neustart aktiv).
 #   3) WICHTIG: Delay der Integration auf 5 s stellen (Master-Eintrag),
 #      sonst stimmen die Delay-Testfälle (Block 1/2) nicht.
 #   4) Gruppe + Mitglieder unten ggf. an deine Testgruppe anpassen.
