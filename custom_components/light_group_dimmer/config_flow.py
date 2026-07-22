@@ -251,6 +251,12 @@ class LightGroupDimmerOptionsFlow(config_entries.OptionsFlow):
         current_entities = entry.options.get(CONF_ENTITIES, entry.data.get(CONF_ENTITIES, []))
 
         all_lights = await _async_get_all_light_entities(self.hass)
+        # Bereits gespeicherte, aber nicht mehr existierende Entitäten (umbenannt
+        # oder gelöscht) trotzdem als Option anbieten. Sonst lehnt cv.multi_select
+        # den gespeicherten Wert ab ("not a valid option") und der Eintrag lässt
+        # sich weder speichern noch korrigieren.
+        for ent in current_entities:
+            all_lights.setdefault(ent, f"{ent} (nicht verfügbar)")
         schema = vol.Schema({
             vol.Required(CONF_NAME, default=current_name): cv.string,
             vol.Required(CONF_ENTITIES, default=current_entities): cv.multi_select(all_lights),
