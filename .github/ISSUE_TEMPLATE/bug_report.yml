@@ -1,0 +1,60 @@
+name: Fehler melden
+description: Melde ein Problem mit Light Group Dimmer
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke für den Bericht! Je mehr Details, desto schneller lässt sich das Problem finden.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Was ist passiert?
+      description: Beschreibe das Problem und was du stattdessen erwartet hast.
+      placeholder: Beim Dimmen der Gruppe ...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Schritte zum Reproduzieren
+      placeholder: |
+        1. Gruppe X öffnen
+        2. Regler auf ... ziehen
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: ha-version
+    attributes:
+      label: Home-Assistant-Version
+      placeholder: "2025.7.0"
+    validations:
+      required: true
+  - type: input
+    id: integration-version
+    attributes:
+      label: Light-Group-Dimmer-Version
+      placeholder: "1.1.0"
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnose
+      description: >
+        Bitte die Diagnose-Datei anhängen: Einstellungen -> Geräte & Dienste ->
+        Light Group Dimmer -> ⋮ -> "Diagnose herunterladen". Sie enthält keine
+        Zugangsdaten.
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logauszug (optional)
+      description: >
+        Falls vorhanden, relevante Zeilen aus Einstellungen -> System -> Protokolle.
+        Für mehr Details vorher Debug-Logging aktivieren (siehe README).
+      render: text
+    validations:
+      required: false
