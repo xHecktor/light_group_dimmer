@@ -28,11 +28,17 @@ Please note that I'm not a professional developer and built this in my spare tim
 
 ## Why weighted dimming?
 
+Move the group slider and the member lamps keep their relative brightness (here: 31 % / 93 % / 100 %) instead of collapsing to one value:
+
+<p align="center">
+  <img src="images/light_dimmer_2.gif" alt="Dragging the group slider while the member lamps keep their relative brightness." width="480">
+</p>
+
+A standard light group pushes every lamp to the same value when you move the slider, so any balance you set up is lost. Light Group Dimmer scales the lamps proportionally instead — both hit the same group average, but only the weighted version keeps the character of the scene:
+
 <p align="center">
   <img src="images/comparison.svg" alt="Standard light group forces every lamp to the same brightness, while Light Group Dimmer keeps their relative levels." width="760">
 </p>
-
-A standard light group pushes every lamp to the same value when you move the slider, so any balance you set up is lost. Light Group Dimmer scales the lamps proportionally instead — both hit the same group average, but only the weighted version keeps the character of the scene.
 
 ## Contents
 

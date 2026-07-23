@@ -28,11 +28,17 @@ Bitte beachtet, dass ich kein Programmierer bin und mir den Code in meiner Freiz
 
 ## Warum gewichtetes Dimmen?
 
+Ziehe den Gruppenregler, und die Mitgliedslampen behalten ihre relative Helligkeit (hier: 31 % / 93 % / 100 %), statt auf einen Wert zusammenzufallen:
+
+<p align="center">
+  <img src="images/light_dimmer_2.gif" alt="Ziehen des Gruppenreglers, während die Mitgliedslampen ihre relative Helligkeit behalten." width="480">
+</p>
+
+Eine normale Lichtgruppe setzt beim Ziehen des Reglers jede Lampe auf denselben Wert – die eingestellte Balance geht verloren. Light Group Dimmer skaliert die Lampen stattdessen proportional: Beide treffen denselben Gruppen-Mittelwert, aber nur die gewichtete Variante erhält den Charakter der Szene:
+
 <p align="center">
   <img src="images/comparison.svg" alt="Die Standardgruppe zwingt jede Lampe auf denselben Wert, Light Group Dimmer erhält ihre relativen Niveaus." width="760">
 </p>
-
-Eine normale Lichtgruppe setzt beim Ziehen des Reglers jede Lampe auf denselben Wert – die eingestellte Balance geht verloren. Light Group Dimmer skaliert die Lampen stattdessen proportional: Beide treffen denselben Gruppen-Mittelwert, aber nur die gewichtete Variante erhält den Charakter der Szene.
 
 ## Inhalt
 
