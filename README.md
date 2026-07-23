@@ -26,6 +26,14 @@ In the Hue app you can press and hold the slider to experiment with the desired 
 
 Please note that I'm not a professional developer and built this in my spare time. It's tested primarily with a Hue Bridge, but the integration only uses the standard Home Assistant light services and is **not** limited to Hue.
 
+## Why weighted dimming?
+
+<p align="center">
+  <img src="images/comparison.svg" alt="Standard light group forces every lamp to the same brightness, while Light Group Dimmer keeps their relative levels." width="760">
+</p>
+
+A standard light group pushes every lamp to the same value when you move the slider, so any balance you set up is lost. Light Group Dimmer scales the lamps proportionally instead — both hit the same group average, but only the weighted version keeps the character of the scene.
+
 ## Contents
 
 - [Features](#features)

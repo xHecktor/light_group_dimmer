@@ -26,6 +26,14 @@ In der Hue-App kann man durch Drücken und Halten des Schiebereglers experimente
 
 Bitte beachtet, dass ich kein Programmierer bin und mir den Code in meiner Freizeit erarbeitet habe. Getestet wird primär mit einer Hue Bridge; die Integration nutzt aber ausschließlich die Standard-Licht-Services von Home Assistant und ist nicht auf Hue beschränkt.
 
+## Warum gewichtetes Dimmen?
+
+<p align="center">
+  <img src="images/comparison.svg" alt="Die Standardgruppe zwingt jede Lampe auf denselben Wert, Light Group Dimmer erhält ihre relativen Niveaus." width="760">
+</p>
+
+Eine normale Lichtgruppe setzt beim Ziehen des Reglers jede Lampe auf denselben Wert – die eingestellte Balance geht verloren. Light Group Dimmer skaliert die Lampen stattdessen proportional: Beide treffen denselben Gruppen-Mittelwert, aber nur die gewichtete Variante erhält den Charakter der Szene.
+
 ## Inhalt
 
 - [Features](#features)

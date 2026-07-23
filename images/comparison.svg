@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-label="Comparison: standard light group forces all lamps to the same brightness, Light Group Dimmer keeps their relative levels.">
+  <defs>
+    <linearGradient id="amber" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffcf87"/>
+      <stop offset="1" stop-color="#f5a623"/>
+    </linearGradient>
+    <linearGradient id="gray" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d3d7dd"/>
+      <stop offset="1" stop-color="#b9bec6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- card -->
+  <rect x="1" y="1" width="798" height="398" rx="14" fill="#ffffff" stroke="#d8dee4"/>
+
+  <!-- title -->
+  <text x="400" y="40" text-anchor="middle" font-size="22" font-weight="700" fill="#1f2328">Group dimmed to 30&#37; &#8212; two very different results</text>
+  <text x="400" y="64" text-anchor="middle" font-size="14" fill="#57606a">Three lamps starting at different levels (validated against real Hue measurements)</text>
+
+  <!-- baseline -->
+  <line x1="40" y1="300" x2="760" y2="300" stroke="#d8dee4" stroke-width="1.5"/>
+
+  <!-- divider after 'before' -->
+  <line x1="280" y1="96" x2="280" y2="300" stroke="#e6eaee" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <!-- ================= Panel 1: Starting point ================= -->
+  <text x="150" y="92" text-anchor="middle" font-size="14" font-weight="700" fill="#1f2328">Starting point</text>
+  <!-- L1 93 -->
+  <rect x="70"  y="160.5" width="40" height="139.5" rx="5" fill="url(#amber)"/>
+  <text x="90"  y="152" text-anchor="middle" font-size="13" font-weight="700" fill="#1f2328">93&#37;</text>
+  <!-- L2 31 -->
+  <rect x="130" y="253.5" width="40" height="46.5"  rx="5" fill="url(#amber)"/>
+  <text x="150" y="245" text-anchor="middle" font-size="13" font-weight="700" fill="#1f2328">31&#37;</text>
+  <!-- L3 100 -->
+  <rect x="190" y="150"   width="40" height="150"   rx="5" fill="url(#amber)"/>
+  <text x="210" y="142" text-anchor="middle" font-size="13" font-weight="700" fill="#1f2328">100&#37;</text>
+  <text x="90"  y="320" text-anchor="middle" font-size="12" fill="#57606a">L1</text>
+  <text x="150" y="320" text-anchor="middle" font-size="12" fill="#57606a">L2</text>
+  <text x="210" y="320" text-anchor="middle" font-size="12" fill="#57606a">L3</text>
+  <text x="150" y="352" text-anchor="middle" font-size="12.5" fill="#57606a">A bright / dim / full mix</text>
+
+  <!-- ================= Panel 2: Standard group ================= -->
+  <text x="400" y="92" text-anchor="middle" font-size="14" font-weight="700" fill="#1f2328">Standard light group</text>
+  <rect x="320" y="255" width="40" height="45" rx="5" fill="url(#gray)"/>
+  <text x="340" y="247" text-anchor="middle" font-size="13" font-weight="700" fill="#57606a">30&#37;</text>
+  <rect x="380" y="255" width="40" height="45" rx="5" fill="url(#gray)"/>
+  <text x="400" y="247" text-anchor="middle" font-size="13" font-weight="700" fill="#57606a">30&#37;</text>
+  <rect x="440" y="255" width="40" height="45" rx="5" fill="url(#gray)"/>
+  <text x="460" y="247" text-anchor="middle" font-size="13" font-weight="700" fill="#57606a">30&#37;</text>
+  <text x="340" y="320" text-anchor="middle" font-size="12" fill="#57606a">L1</text>
+  <text x="400" y="320" text-anchor="middle" font-size="12" fill="#57606a">L2</text>
+  <text x="460" y="320" text-anchor="middle" font-size="12" fill="#57606a">L3</text>
+  <text x="400" y="352" text-anchor="middle" font-size="12.5" fill="#cf222e">&#10007; all forced equal &#8212; the mix is gone</text>
+
+  <!-- ================= Panel 3: Light Group Dimmer ================= -->
+  <text x="650" y="92" text-anchor="middle" font-size="14" font-weight="700" fill="#1f2328">Light Group Dimmer</text>
+  <!-- 37 -->
+  <rect x="570" y="244.5" width="40" height="55.5" rx="5" fill="url(#amber)"/>
+  <text x="590" y="236" text-anchor="middle" font-size="13" font-weight="700" fill="#1f2328">37&#37;</text>
+  <!-- 13 -->
+  <rect x="630" y="280.5" width="40" height="19.5" rx="5" fill="url(#amber)"/>
+  <text x="650" y="272" text-anchor="middle" font-size="13" font-weight="700" fill="#1f2328">13&#37;</text>
+  <!-- 40 -->
+  <rect x="690" y="240"   width="40" height="60"   rx="5" fill="url(#amber)"/>
+  <text x="710" y="232" text-anchor="middle" font-size="13" font-weight="700" fill="#1f2328">40&#37;</text>
+  <text x="590" y="320" text-anchor="middle" font-size="12" fill="#57606a">L1</text>
+  <text x="650" y="320" text-anchor="middle" font-size="12" fill="#57606a">L2</text>
+  <text x="710" y="320" text-anchor="middle" font-size="12" fill="#57606a">L3</text>
+  <text x="650" y="352" text-anchor="middle" font-size="12.5" fill="#1a7f37">&#10003; same mix, just dimmer</text>
+
+  <!-- footer note -->
+  <text x="400" y="384" text-anchor="middle" font-size="11.5" fill="#8b949e">Both hit the same 30&#37; group average &#8212; only the distribution differs.</text>
+</svg>
